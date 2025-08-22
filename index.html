@@ -36,10 +36,12 @@
 
 <main>
   <div class="card">
+    <!-- iframe invisível que recebe a resposta do Web App -->
     <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
 
+    <!-- POST direto ao Web App -->
     <form id="formRegisto" method="POST"
-          action="https://script.google.com/macros/s/AKfycbz5MGCPaZto-aOYDuI3NdopBsTUU89yWYn9l0w9yugAjP9AxdIz8q5sQOUQjXD8YkI/exec"
+          action="https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec"
           target="submitSink" autocomplete="on">
 
       <div class="grid">
@@ -92,7 +94,7 @@
         <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
       </div>
 
-      <!-- Ocultos (auto) -->
+      <!-- Campos ocultos (auto) -->
       <input type="hidden" id="latitude"   name="latitude"   value="">
       <input type="hidden" id="longitude"  name="longitude"  value="">
       <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
@@ -113,7 +115,9 @@
 </main>
 
 <script>
-  // Geolocalização (oculto)
+  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbz5MGCPaZto-aOYDuI3NdopBsTUU89yWYn9l0w9yugAjP9AxdIz8q5sQOUQjXD8YkI/exec';
+
+  // Geolocalização (oculta)
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -124,7 +128,7 @@
     );
   }
 
-  // Fase da lua (oculto)
+  // Fase da lua (oculta)
   function moonInfo(date=new Date()){
     const synodic=29.53058867, known=Date.UTC(2000,0,6,18,14);
     const days=(date.getTime()-known)/86400000, lun=days/synodic;
@@ -158,15 +162,32 @@
     if (!outra) inpOu.value = '';
   });
 
+  // ---------- JSONP util ----------
+  function getLastIdJSONP(cb){
+    const cbName = '__jsonp_'+Date.now();
+    window[cbName] = function(data){
+      try { cb(data && data.id ? String(data.id) : ''); }
+      finally {
+        delete window[cbName];
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+      }
+    };
+    const script = document.createElement('script');
+    script.src = WEBAPP_URL + '?last=1&callback='+cbName+'&t=' + Date.now();
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
+  // Guardar último ID conhecido (antes de enviar) para evitar confundir com registos antigos
+  let lastKnownId = '';
+  getLastIdJSONP(id => { lastKnownId = id || ''; });
+
   // UI envio + receção do ID
   const form = document.getElementById('formRegisto');
-  const sink = document.getElementById('submitSink');
   const btn  = document.getElementById('btnEnviar');
   const msg  = document.getElementById('msg');
   const err  = document.getElementById('msgErr');
   const idEl = document.getElementById('idGerado');
-
-  let gotId = false, fallbackTimer = null;
 
   form.addEventListener('submit', (e) => {
     if (selCon.value === 'Outra' && !inpOu.value.trim()) {
@@ -174,56 +195,43 @@
     }
     msg.style.display='none'; err.style.display='none';
     btn.disabled=true; btn.textContent='A enviar…';
-    gotId = false;
 
-    // Fallback JSONP caso não chegue postMessage em 2s
-    clearTimeout(fallbackTimer);
-    fallbackTimer = setTimeout(()=> {
-      if (gotId) return;
-      const cbName = '__receiveLastId_' + Date.now();
-      window[cbName] = function(data){
-        if (data && data.ok && data.id) {
-          idEl.textContent = data.id;
+    // Fallback polling: tenta obter o último ID até ver um novo (máx. 8 tentativas)
+    let tries = 0;
+    const poll = () => {
+      getLastIdJSONP((id) => {
+        if (id && id !== lastKnownId) {
+          idEl.textContent = id;
           msg.style.display='block';
+          btn.disabled=false; btn.textContent='Enviar registo';
+          form.reset(); wrapOu.style.display='none'; inpOu.required=false;
+        } else if (++tries < 8) {
+          setTimeout(poll, 600); // tenta de novo
         } else {
-          err.style.display='block';
+          // se não conseguir ler, pelo menos mostra “enviado”
+          idEl.textContent = '(enviado)';
+          msg.style.display='block';
+          btn.disabled=false; btn.textContent='Enviar registo';
+          form.reset(); wrapOu.style.display='none'; inpOu.required=false;
         }
-        cleanup();
-      };
-      const s = document.createElement('script');
-      s.src = 'https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec?last=1&callback='+cbName+'&t='+Date.now();
-      s.async = true;
-      document.body.appendChild(s);
-
-      function cleanup(){
-        btn.disabled=false; btn.textContent='Enviar registo';
-        delete window[cbName];
-        if (s && s.parentNode) s.parentNode.removeChild(s);
-        form.reset(); wrapOu.style.display='none'; inpOu.required=false;
-      }
-    }, 2000);
+      });
+    };
+    // começa o polling um pouco depois da submissão
+    setTimeout(poll, 600);
   });
 
-  // Recebe o postMessage com o ID
+  // Recebe o postMessage do iframe (se o Apps Script estiver com a versão que envia a mensagem)
   window.addEventListener('message', (evt) => {
-    const data = typeof evt.data === 'string' ? (()=>{try{return JSON.parse(evt.data)}catch(_){return {}}})() : evt.data;
-    if (!data || typeof data !== 'object') return;
-    if (data.ok && data.id) {
-      gotId = true;
-      clearTimeout(fallbackTimer);
+    let data = evt.data;
+    if (typeof data === 'string') { try { data = JSON.parse(data); } catch(_) {} }
+    if (data && data.ok && data.id) {
+      lastKnownId = data.id; // atualiza base
       idEl.textContent = data.id;
       msg.style.display='block';
       btn.disabled=false; btn.textContent='Enviar registo';
       form.reset(); wrapOu.style.display='none'; inpOu.required=false;
-    } else if (data && data.ok === false) {
-      clearTimeout(fallbackTimer);
-      err.style.display='block';
-      btn.disabled=false; btn.textContent='Enviar registo';
     }
   });
-
-  // Se o iframe carregar mas não vier mensagem, deixamos o fallback tratar
-  sink.addEventListener('load', ()=>{/* intencionalmente vazio */});
 </script>
 </body>
 </html>
