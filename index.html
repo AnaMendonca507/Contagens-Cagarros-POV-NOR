@@ -6,35 +6,55 @@
 <meta name="theme-color" content="#2f4595" />
 <title>Registo de Cagarros / Cory's Shearwater Rescue</title>
 <style>
-  :root { --maxw: 520px; --spea-blue: #2f4595; }
-  body { font-family: Arial, sans-serif; padding: 20px; margin: 0 auto; max-width: var(--maxw); background: var(--spea-blue); color: #fff; }
-  h2 { text-align: center; margin: 12px 0 6px; }
-  p.subtitle { text-align:center; margin:0 0 16px; color:#dbe1ff; font-size:14px; }
-  label { font-weight: 600; display: block; margin-top: 14px; }
-  select, input, textarea, button { width: 100%; padding: 12px; margin-top: 6px; font-size: 16px; border:1px solid #ced4da; border-radius: 8px; background:#fff; color:#000; }
-  textarea { resize: vertical; min-height: 72px; }
-  button { background-color: #28a745; color: #fff; border: none; cursor: pointer; font-weight: 700; border-radius: 8px; }
-  button.secondary { background:#0d6efd; margin-top:10px; }
-  button.ghost { background:transparent; border:2px solid #fff; color:#fff; }
-  button:disabled { background-color: #adb5bd; cursor:not-allowed; }
-  #mensagem { margin-top: 18px; text-align: center; font-weight: bold; min-height: 24px; }
-  .hint { font-size: 12px; color:#e0e0e0; margin-top:4px; }
-  .hidden { display:none !important; }
-  .statusbar { margin-bottom: 12px; padding:10px; border-radius:8px; font-weight:700; text-align:center; }
-  .online  { background:#e6f4ea; color:#1e7e34; border:1px solid #c7efd3; }
-  .offline { background:#fdecea; color:#a4252c; border:1px solid #f5c6cb; }
-  .queue { font-size: 13px; text-align:center; color:#eee; margin-top:8px; }
-  .code-wrap { display:flex; justify-content:center; margin-top:12px; }
-  .code-box { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 2.2rem; line-height: 1.2; background:#fff; border:3px dashed #28a745; color:#0b7a2a; padding:14px 18px; border-radius:12px; user-select: all; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,.15); min-width:72%; }
-  .code-actions { display:flex; justify-content:center; gap:10px; margin-top:8px; }
-  .small-note { text-align:center; font-size:12px; color:#dbe1ff; margin-top:6px; }
-  footer { margin: 28px 0 6px; display:flex; justify-content:center; }
-  footer img { max-width: 160px; height:auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,.25)); opacity: 0.95; }
+  :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
+  body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
+  h2{ text-align:center;margin:8px 0 4px;line-height:1.2 }
+  p.subtitle{ text-align:center;margin:0 0 16px;color:var(--muted);font-size:14px }
+
+  form{display:block}
+  label{font-weight:700;display:block;margin-top:14px}
+  select,input[type="text"],textarea,button{width:100%;padding:14px 12px;margin-top:6px;font-size:17px;border:1px solid #ced4da;border-radius:10px;background:#fff;color:#000}
+  textarea{resize:vertical;min-height:84px}
+  button{background:var(--cta);color:#fff;border:none;cursor:pointer;font-weight:800;min-height:48px;border-radius:12px}
+  button.secondary{background:#0d6efd;margin-top:12px}
+  button.ghost{background:transparent;border:2px solid #fff;color:#fff}
+  button:disabled{background:#9ab6a0;cursor:not-allowed}
+
+  .hint{font-size:12px;color:#f0f3ff;margin-top:4px}
+  .hidden{display:none!important}
+  .statusbar{margin:8px 0 10px;padding:10px;border-radius:10px;font-weight:700;text-align:center}
+  .online{background:#e6f4ea;color:#1e7e34;border:1px solid #c7efd3}
+  .offline{background:#fdecea;color:#a4252c;border:1px solid #f5c6cb}
+  .queue{font-size:13px;text-align:center;color:#eee;margin-top:8px}
+
+  /* Código gigante */
+  .code-wrap{display:flex;justify-content:center;margin-top:12px}
+  .code-box{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:clamp(2.4rem,10vw,3.8rem);line-height:1.1;
+    background:#fff;border:3px dashed var(--ok);color:#0b7a2a;
+    padding:16px 18px;border-radius:14px;user-select:all;text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);min-width:78%;
+  }
+  .code-actions{display:flex;justify-content:center;gap:10px;margin-top:8px}
+  .small-note{text-align:center;font-size:12px;color:var(--muted);margin-top:6px}
+
+  /* Logo no fim com tinte azul aplicado a PNG branco */
+  footer{margin:28px 0 6px;display:flex;justify-content:center}
+  footer img.logo{max-width:190px;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+  /* TINT: converte branco -> azul aproximado #2f4595 */
+  footer img.logo.tint-blue{
+    filter:
+      brightness(0) saturate(100%)
+      invert(20%) sepia(36%) saturate(1391%) hue-rotate(206deg)
+      brightness(88%) contrast(95%)
+      drop-shadow(0 2px 4px rgba(0,0,0,.25));
+  }
 </style>
 </head>
 <body>
 
-<h2> Registo de Cagarros<br/> Cory's Shearwater Rescue</h2>
+<h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
 
 <div id="netStatus" class="statusbar hidden"></div>
@@ -60,7 +80,7 @@
     <option value="Fora da marina/Porto / Outside marina/Port">Fora da marina/Porto / Outside marina/Port</option>
   </select>
 
-  <!-- NOVO: Concelho -->
+  <!-- Concelho -->
   <label for="concelho">Concelho / Municipality</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
@@ -77,6 +97,7 @@
   <label for="observacoes">Observações / Observations</label>
   <textarea id="observacoes" name="observacoes" placeholder="Informações adicionais / Additional information"></textarea>
 
+  <!-- GPS oculto -->
   <input type="hidden" id="latitude"  name="latitude" />
   <input type="hidden" id="longitude" name="longitude" />
 
@@ -87,20 +108,22 @@
 <div id="queueInfo" class="queue"></div>
 
 <p id="mensagem"></p>
-
 <div id="codeArea" class="hidden">
-  <div id="codeWrap" class="code-wrap"><div id="bigCode" class="code-box" title="Toque para selecionar / Tap to select"></div></div>
+  <div class="code-wrap"><div id="bigCode" class="code-box" title="Toque para selecionar / Tap to select"></div></div>
   <div class="code-actions"><button id="copyBtn" class="ghost">📋 Copiar código / Copy code</button></div>
-  <div id="codeNote" class="small-note">Guarde este código. / Keep this code.</div>
+  <div class="small-note">Guarde este código. / Keep this code.</div>
 </div>
 
-<footer><img src="./spea-logo-white.png" alt="SPEA" /></footer>
+<footer>
+  <!-- usa o ficheiro que subiste -->
+  <img src="./spea-logo-white.png" alt="SPEA" class="logo tint-blue" />
+</footer>
 
 <script>
-  // 👉 Cola aqui o URL do teu Web App (depois de implementares o Apps Script acima)
+  // 👉 Cola aqui o URL do teu Web App
   const scriptURL = "https://script.google.com/macros/s/AKfycbzJ4oi4PXAQJJTm8jEETT6xgWB3KFz6IoZvlUrEMOQuwlVklLzIIvv-y3q2Otlkt8Uj/exec";
 
-  // ===== GPS =====
+  // GPS
   document.addEventListener("DOMContentLoaded", () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => {
@@ -110,120 +133,101 @@
       }, () => { enableSend(); });
     } else { enableSend(); }
   });
-  function enableSend(){ const b = document.getElementById("sendBtn"); b.disabled = false; b.textContent = "Enviar / Submit"; }
+  function enableSend(){ const b=document.getElementById("sendBtn"); b.disabled=false; b.textContent="Enviar / Submit"; }
 
-  // ===== Concelho: mostrar "Outra"
-  const selCon = document.getElementById("concelho");
-  const wrapOu = document.getElementById("concelhoOutroWrap");
-  const inpOu  = document.getElementById("concelhoOutro");
-  selCon.addEventListener("change", () => {
-    const outra = selCon.value === "Outra";
-    wrapOu.classList.toggle("hidden", !outra);
-    inpOu.required = outra;
-    if (!outra) inpOu.value = "";
-  });
+  // Concelho → “Outra”
+  const selCon=document.getElementById("concelho");
+  const wrapOu=document.getElementById("concelhoOutroWrap");
+  const inpOu=document.getElementById("concelhoOutro");
+  selCon.addEventListener("change",()=>{ const outra=selCon.value==="Outra"; wrapOu.classList.toggle("hidden",!outra); inpOu.required=outra; if(!outra) inpOu.value=""; });
 
-  // ===== Offline queue =====
-  const LS_KEY = "cagarros_pendentes_v1";
-  const netBar = document.getElementById("netStatus");
-  const flushBtn = document.getElementById("flushBtn");
-  const queueInfo = document.getElementById("queueInfo");
-  function getQueue(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch(_){ return []; } }
-  function setQueue(arr){ localStorage.setItem(LS_KEY, JSON.stringify(arr)); updateQueueUI(); }
-  function addPending(payload){ const q = getQueue(); q.push({ payload, savedAt: new Date().toISOString() }); setQueue(q); }
-  function updateQueueUI(){ const qlen = getQueue().length; queueInfo.textContent = qlen > 0 ? `🗂️ Pendentes: ${qlen}` : ""; flushBtn.classList.toggle("hidden", qlen === 0); }
-  function setNetBar(){ netBar.classList.remove("hidden"); if (navigator.onLine) { netBar.className = "statusbar online";  netBar.textContent = "Ligação ativa / Online"; } else { netBar.className = "statusbar offline"; netBar.textContent = "Sem rede — pendentes / Offline — will be queued"; } }
-  window.addEventListener("online", () => { setNetBar(); flushPending(); });
-  window.addEventListener("offline", setNetBar);
-  setNetBar(); updateQueueUI();
+  // Offline queue
+  const LS_KEY="cagarros_pendentes_v1"; const netBar=document.getElementById("netStatus"); const flushBtn=document.getElementById("flushBtn"); const queueInfo=document.getElementById("queueInfo");
+  function getQueue(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}catch(_){return[]} }
+  function setQueue(a){ localStorage.setItem(LS_KEY,JSON.stringify(a)); updateQueueUI(); }
+  function addPending(p){ const q=getQueue(); q.push({payload:p,savedAt:new Date().toISOString()}); setQueue(q); }
+  function updateQueueUI(){ const n=getQueue().length; queueInfo.textContent=n>0?`🗂️ Pendentes: ${n}`:""; flushBtn.classList.toggle("hidden",n===0); }
+  function setNetBar(){ netBar.classList.remove("hidden"); if(navigator.onLine){ netBar.className="statusbar online"; netBar.textContent="Ligação ativa / Online"; } else { netBar.className="statusbar offline"; netBar.textContent="Sem rede — pendentes / Offline — will be queued"; } }
+  window.addEventListener("online",()=>{ setNetBar(); flushPending(); }); window.addEventListener("offline",setNetBar); setNetBar(); updateQueueUI();
 
-  // ===== Área do código =====
-  const codeArea = document.getElementById("codeArea");
-  const bigCode  = document.getElementById("bigCode");
-  const copyBtn  = document.getElementById("copyBtn");
+  // Código UI
+  const codeArea=document.getElementById("codeArea");
+  const bigCode=document.getElementById("bigCode");
+  const copyBtn=document.getElementById("copyBtn");
 
-  // ===== Submissão =====
-  document.getElementById("cagarroForm").addEventListener("submit", async (e) => {
+  // Submissão
+  document.getElementById("cagarroForm").addEventListener("submit",async(e)=>{
     e.preventDefault();
+    if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.focus(); return; }
 
-    // valida "Outra"
-    if (selCon.value === "Outra" && !inpOu.value.trim()) { inpOu.focus(); return; }
+    const btn=document.getElementById("sendBtn");
+    const msg=document.getElementById("mensagem");
+    btn.disabled=true; btn.textContent="A enviar... / Sending...";
+    codeArea.classList.add("hidden"); bigCode.textContent="";
 
-    const btn = document.getElementById("sendBtn");
-    const msg = document.getElementById("mensagem");
-    btn.disabled = true; btn.textContent = "A enviar... / Sending...";
-
-    codeArea.classList.add("hidden"); bigCode.textContent = "";
-
-    const payload = {
-      nome: document.getElementById("nome").value,
-      estado: document.getElementById("estado").value,
-      local: document.getElementById("local").value,
-      concelho: document.getElementById("concelho").value,
-      concelhoOutro: document.getElementById("concelhoOutro")?.value || "",
-      observacoes: document.getElementById("observacoes").value,
-      latitude: document.getElementById("latitude").value,
-      longitude: document.getElementById("longitude").value
+    const payload={
+      nome:document.getElementById("nome").value,
+      estado:document.getElementById("estado").value,
+      local:document.getElementById("local").value,
+      concelho:document.getElementById("concelho").value,
+      concelhoOutro:document.getElementById("concelhoOutro")?.value||"",
+      observacoes:document.getElementById("observacoes").value,
+      latitude:document.getElementById("latitude").value,
+      longitude:document.getElementById("longitude").value
     };
 
-    try {
-      const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify(payload) });
-      const text = await res.text();
-      let data = null; try { data = JSON.parse(text); } catch(_) {}
-      if (res.ok && data && data.status === "success") {
-        msg.textContent = "✅ Registo enviado! / Entry submitted!";
-        bigCode.textContent = data.codigo || "";
+    try{
+      const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(payload)});
+      const text=await res.text(); let data=null; try{ data=JSON.parse(text);}catch(_){}
+      if(res.ok && data && data.status==="success"){
+        msg.textContent="✅ Registo enviado! / Entry submitted!";
+        bigCode.textContent=data.codigo||"";
         codeArea.classList.remove("hidden");
         e.target.reset();
       } else {
         addPending(payload);
-        msg.innerHTML = "⚠️ Não foi possível gravar agora. Guardado em Pendentes.";
+        msg.innerHTML="⚠️ Não foi possível gravar agora. Guardado em Pendentes.";
       }
     } catch {
       addPending(payload);
-      document.getElementById("mensagem").textContent = "📦 Sem rede: guardado em Pendentes / Saved offline.";
+      document.getElementById("mensagem").textContent="📦 Sem rede: guardado em Pendentes / Saved offline.";
     } finally {
-      btn.disabled = false; btn.textContent = "Enviar / Submit";
+      btn.disabled=false; btn.textContent="Enviar / Submit";
     }
   });
 
-  // ===== Enviar Pendentes =====
+  // Enviar Pendentes
   async function flushPending(){
-    if (!navigator.onLine) return;
-    const q = getQueue(); if (q.length === 0) return;
-    flushBtn.disabled = true; flushBtn.textContent = "A enviar pendentes... / Sending...";
-    let ok = 0, fail = 0; const newQ = [];
-    for (const item of q) {
-      try {
-        const res = await fetch(scriptURL, { method: "POST", body: JSON.stringify(item.payload) });
-        if (res.ok) ok++; else { fail++; newQ.push(item); }
-      } catch(_) { fail++; newQ.push(item); }
+    if(!navigator.onLine) return;
+    const q=getQueue(); if(q.length===0) return;
+    flushBtn.disabled=true; flushBtn.textContent="A enviar pendentes... / Sending...";
+    let ok=0,fail=0; const newQ=[];
+    for(const item of q){
+      try{ const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(item.payload)}); if(res.ok) ok++; else {fail++; newQ.push(item);} }
+      catch(_){ fail++; newQ.push(item); }
     }
     setQueue(newQ);
-    flushBtn.disabled = false; flushBtn.textContent = "📤 Enviar Pendentes / Send Pending";
-    const msg = document.getElementById("mensagem");
-    if (ok>0) msg.textContent = `📤 Enviados: ${ok} | Por enviar: ${newQ.length}`;
-    if (fail>0 && ok===0) msg.textContent = "⚠️ Falha ao enviar pendentes.";
+    flushBtn.disabled=false; flushBtn.textContent="📤 Enviar Pendentes / Send Pending";
+    const msg=document.getElementById("mensagem");
+    if(ok>0) msg.textContent=`📤 Enviados: ${ok} | Por enviar: ${newQ.length}`;
+    if(fail>0 && ok===0) msg.textContent="⚠️ Falha ao enviar pendentes.";
   }
-  document.getElementById("flushBtn").addEventListener("click", flushPending);
+  document.getElementById("flushBtn").addEventListener("click",flushPending);
 
-  // ===== Copiar código =====
-  copyBtn.addEventListener("click", async (ev) => {
+  // Copiar código
+  copyBtn.addEventListener("click",async(ev)=>{
     ev.preventDefault();
-    const code = bigCode.textContent.trim(); if (!code) return;
-    try {
-      await navigator.clipboard.writeText(code);
-      const old = copyBtn.textContent; copyBtn.textContent = "✅ Copiado!"; setTimeout(() => copyBtn.textContent = old, 1400);
-    } catch(_) {
-      const r = document.createRange(); r.selectNodeContents(bigCode);
-      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    }
+    const code=bigCode.textContent.trim(); if(!code) return;
+    try{ await navigator.clipboard.writeText(code); const old=copyBtn.textContent; copyBtn.textContent="✅ Copiado!"; setTimeout(()=>copyBtn.textContent=old,1400); }
+    catch(_){ const r=document.createRange(); r.selectNodeContents(bigCode); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }
   });
-  bigCode.addEventListener("click", () => {
-    const r = document.createRange(); r.selectNodeContents(bigCode);
-    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  bigCode.addEventListener("click",()=>{
+    const r=document.createRange(); r.selectNodeContents(bigCode);
+    const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
   });
 </script>
 </body>
 </html>
+
+
 
