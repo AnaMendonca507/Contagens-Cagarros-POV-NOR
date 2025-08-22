@@ -146,7 +146,7 @@
 
   <script>
     // 👉 Web App atual
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxyAV246TBtYJAniE1Bw83IhiGwLZwJ6BwuU8r12ECdGv0JhwiRAOChV1-FkkOxm2lk/exec';
+    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec';
 
     // Geolocalização
     if (navigator.geolocation) {
@@ -184,7 +184,7 @@
       if (!outra) inpOutro.value = '';
     });
 
-    // Envio
+    // Envio (FormData para evitar preflight CORS)
     document.getElementById('formRegisto').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -194,18 +194,17 @@
         return;
       }
 
-      const payload = {
-        nome: document.getElementById('nome').value.trim(),
-        estado: document.getElementById('estado').value,
-        latitude: window.__lat ?? document.getElementById('latitude').value || '',
-        longitude: window.__lon ?? document.getElementById('longitude').value || '',
-        faseLua: document.getElementById('faseLua').value || '',
-        faseLuaPct: approxMoonPhasePercent(),
-        local: document.getElementById('local').value || '',
-        concelho: selConcelho.value || '',
-        concelhoOutro: inpOutro.value.trim() || '',
-        observacoes: document.getElementById('observacoes').value || ''
-      };
+      const fd = new FormData();
+      fd.append('nome', document.getElementById('nome').value.trim());
+      fd.append('estado', document.getElementById('estado').value);
+      fd.append('latitude', window.__lat ?? document.getElementById('latitude').value || '');
+      fd.append('longitude', window.__lon ?? document.getElementById('longitude').value || '');
+      fd.append('faseLua', document.getElementById('faseLua').value || '');
+      fd.append('faseLuaPct', approxMoonPhasePercent());
+      fd.append('local', document.getElementById('local').value || '');
+      fd.append('concelho', selConcelho.value || '');
+      fd.append('concelhoOutro', inpOutro.value.trim() || '');
+      fd.append('observacoes', document.getElementById('observacoes').value || '');
 
       const btn = document.getElementById('btnEnviar');
       const msg = document.getElementById('msg');
@@ -217,27 +216,24 @@
       btn.textContent = 'A enviar…';
 
       try {
-        // cache-busting para evitar versões antigas em proxy
+        // cache-busting
         const url = WEBAPP_URL + '?t=' + Date.now();
 
         const resp = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-          // Se tiveres problemas de CORS, poderás usar mode: 'no-cors'
-          // mas não conseguirás ler o JSON de resposta.
+          body: fd
+          // Sem headers personalizados => sem preflight
         });
 
+        // Nem sempre o Web App devolve CORS para ler o JSON; mostramos OK mesmo sem parse
         let data = { ok: true, id: '' };
         try { data = await resp.json(); } catch (_) {}
-
-        document.getElementById('idGerado').textContent = data.id || '(gerado)';
+        document.getElementById('idGerado').textContent = data.id || '(enviado)';
         msg.style.display = 'block';
         (e.target).reset();
-        // limpar estado do "Outra"
         wrapOutro.style.display = 'none';
         inpOutro.required = false;
-      } catch (ex) {
+      } catch (_) {
         err.style.display = 'block';
       } finally {
         btn.disabled = false;
@@ -247,3 +243,4 @@
   </script>
 </body>
 </html>
+
