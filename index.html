@@ -36,12 +36,10 @@
 
 <main>
   <div class="card">
-    <!-- iframe invisível que recebe a resposta do Web App -->
     <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
 
-    <!-- POST direto ao Web App -->
     <form id="formRegisto" method="POST"
-          action="https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec"
+          action="https://script.google.com/macros/s/AKfycbzYSWc1pumdviFhmwsoXc5kICQS5uRiXrX0Vj_wRQ4fDtuQw9j0QjHOPw3np2aDZ_CU/exec"
           target="submitSink" autocomplete="on">
 
       <div class="grid">
@@ -94,11 +92,12 @@
         <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
       </div>
 
-      <!-- Campos ocultos (auto) -->
+      <!-- Ocultos (auto) -->
       <input type="hidden" id="latitude"   name="latitude"   value="">
       <input type="hidden" id="longitude"  name="longitude"  value="">
       <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
       <input type="hidden" id="faseLua"    name="faseLua"    value="">
+      <input type="hidden" id="clientKey"  name="clientKey"  value="">
 
       <div class="row" style="margin-top:10px">
         <button id="btnEnviar" class="btn" type="submit">Enviar registo</button>
@@ -115,7 +114,7 @@
 </main>
 
 <script>
-  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbz5MGCPaZto-aOYDuI3NdopBsTUU89yWYn9l0w9yugAjP9AxdIz8q5sQOUQjXD8YkI/exec';
+  const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzYSWc1pumdviFhmwsoXc5kICQS5uRiXrX0Vj_wRQ4fDtuQw9j0QjHOPw3np2aDZ_CU/exec';
 
   // Geolocalização (oculta)
   if (navigator.geolocation) {
@@ -162,70 +161,65 @@
     if (!outra) inpOu.value = '';
   });
 
-  // ---------- JSONP util ----------
-  function getLastIdJSONP(cb){
-    const cbName = '__jsonp_'+Date.now();
-    window[cbName] = function(data){
-      try { cb(data && data.id ? String(data.id) : ''); }
-      finally {
-        delete window[cbName];
-        if (script && script.parentNode) script.parentNode.removeChild(script);
-      }
-    };
-    const script = document.createElement('script');
-    script.src = WEBAPP_URL + '?last=1&callback='+cbName+'&t=' + Date.now();
-    script.async = true;
-    document.body.appendChild(script);
+  // Util JSONP
+  function jsonp(url, cb){
+    const cbName='__cb'+Math.random().toString(36).slice(2);
+    window[cbName]=function(data){ try{cb(data)}finally{ delete window[cbName]; if(s&&s.parentNode) s.parentNode.removeChild(s); } };
+    const s=document.createElement('script');
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cbName+'&t='+Date.now();
+    s.async=true; document.body.appendChild(s);
   }
 
-  // Guardar último ID conhecido (antes de enviar) para evitar confundir com registos antigos
-  let lastKnownId = '';
-  getLastIdJSONP(id => { lastKnownId = id || ''; });
-
-  // UI envio + receção do ID
+  // UI envio + obtenção do ID
   const form = document.getElementById('formRegisto');
   const btn  = document.getElementById('btnEnviar');
   const msg  = document.getElementById('msg');
   const err  = document.getElementById('msgErr');
   const idEl = document.getElementById('idGerado');
 
+  // Token único deste envio
+  function newClientKey(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
+
   form.addEventListener('submit', (e) => {
     if (selCon.value === 'Outra' && !inpOu.value.trim()) {
       e.preventDefault(); inpOu.focus(); return;
     }
+    // gerar token e guardar em campo oculto
+    const key = newClientKey();
+    document.getElementById('clientKey').value = key;
+
     msg.style.display='none'; err.style.display='none';
     btn.disabled=true; btn.textContent='A enviar…';
 
-    // Fallback polling: tenta obter o último ID até ver um novo (máx. 8 tentativas)
-    let tries = 0;
-    const poll = () => {
-      getLastIdJSONP((id) => {
-        if (id && id !== lastKnownId) {
-          idEl.textContent = id;
-          msg.style.display='block';
-          btn.disabled=false; btn.textContent='Enviar registo';
-          form.reset(); wrapOu.style.display='none'; inpOu.required=false;
-        } else if (++tries < 8) {
-          setTimeout(poll, 600); // tenta de novo
-        } else {
-          // se não conseguir ler, pelo menos mostra “enviado”
-          idEl.textContent = '(enviado)';
+    // Poll via JSONP até obter o ID associado ao token (máx. 20s)
+    let elapsed = 0;
+    const tick = 700; // ms
+    const timer = setInterval(() => {
+      elapsed += tick;
+      jsonp(WEBAPP_URL + '?find=' + encodeURIComponent(key), (data) => {
+        if (data && data.ok && data.id) {
+          clearInterval(timer);
+          idEl.textContent = data.id;
           msg.style.display='block';
           btn.disabled=false; btn.textContent='Enviar registo';
           form.reset(); wrapOu.style.display='none'; inpOu.required=false;
         }
       });
-    };
-    // começa o polling um pouco depois da submissão
-    setTimeout(poll, 600);
+      if (elapsed >= 20000) { // timeout
+        clearInterval(timer);
+        idEl.textContent = '(enviado)';
+        msg.style.display='block';
+        btn.disabled=false; btn.textContent='Enviar registo';
+        form.reset(); wrapOu.style.display='none'; inpOu.required=false;
+      }
+    }, tick);
   });
 
-  // Recebe o postMessage do iframe (se o Apps Script estiver com a versão que envia a mensagem)
+  // Recebe também via postMessage, se disponível (mais rápido)
   window.addEventListener('message', (evt) => {
     let data = evt.data;
     if (typeof data === 'string') { try { data = JSON.parse(data); } catch(_) {} }
     if (data && data.ok && data.id) {
-      lastKnownId = data.id; // atualiza base
       idEl.textContent = data.id;
       msg.style.display='block';
       btn.disabled=false; btn.textContent='Enviar registo';
