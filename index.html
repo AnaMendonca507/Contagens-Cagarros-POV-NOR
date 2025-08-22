@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#2f4595" />
-<title>Registo de Cagarros POVOAÇAO NORDESTE/ Cory's Shearwater Rescue</title>
+<title>Registo de Cagarros / Cory's Shearwater Rescue</title>
 <style>
   :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
   body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
@@ -49,7 +49,7 @@
 </head>
 <body>
 
-<h2>Registo de Cagarros POVOAÇAO NORDESTE<br/>Cory's Shearwater Rescue</h2>
+<h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
 
 <div id="netStatus" class="statusbar hidden"></div>
@@ -67,15 +67,7 @@
     <option value="Oleado / Oiled">Oleado / Oiled</option>
   </select>
 
-  <label for="local">Local / Location</label>
-  <select id="local" name="local" required>
-    <option value="">-- Selecionar / Select --</option>
-    <option value="Sem localização / No location">Sem localização / No location</option>
-    <option value="Hotel de Cagarro / Shearwater Hotel">Hotel de Cagarro / Shearwater Hotel</option>
-    <option value="Fora da marina/Porto / Outside marina/Port">Fora da marina/Porto / Outside marina/Port</option>
-  </select>
-
-  <!-- Concelho -->
+  <!-- 🔁 Concelho vem ANTES de Local -->
   <label for="concelho">Concelho / Municipality</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
@@ -88,6 +80,14 @@
     <label for="concelhoOutro">Outro (especifique) / Other (specify)</label>
     <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta" />
   </div>
+
+  <label for="local">Local / Location</label>
+  <select id="local" name="local" required>
+    <option value="">-- Selecionar / Select --</option>
+    <option value="Sem localização / No location">Sem localização / No location</option>
+    <option value="Hotel de Cagarro / Shearwater Hotel">Hotel de Cagarro / Shearwater Hotel</option>
+    <option value="Fora da marina/Porto / Outside marina/Port">Fora da marina/Porto / Outside marina/Port</option>
+  </select>
 
   <label for="observacoes">Observações / Observations</label>
   <textarea id="observacoes" name="observacoes" placeholder="Informações adicionais / Additional information"></textarea>
@@ -110,7 +110,6 @@
 </div>
 
 <footer>
-  <!-- logo branco -->
   <img src="./spea-logo-white.png" alt="SPEA" class="logo" />
 </footer>
 
@@ -163,9 +162,9 @@
     const payload={
       nome:document.getElementById("nome").value,
       estado:document.getElementById("estado").value,
-      local:document.getElementById("local").value,
       concelho:document.getElementById("concelho").value,
       concelhoOutro:document.getElementById("concelhoOutro")?.value||"",
+      local:document.getElementById("local").value,
       observacoes:document.getElementById("observacoes").value,
       latitude:document.getElementById("latitude").value,
       longitude:document.getElementById("longitude").value
@@ -224,7 +223,4 @@
 </script>
 </body>
 </html>
-
-
-
 
