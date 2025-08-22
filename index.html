@@ -38,7 +38,14 @@
 
   <main>
     <div class="card">
-      <form id="formRegisto" autocomplete="on">
+      <!-- iframe “sumidouro” para receber a resposta do Web App -->
+      <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
+
+      <!-- POST direto ao Web App (sem fetch) -->
+      <form id="formRegisto" method="POST"
+            action="https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec"
+            target="submitSink" autocomplete="on">
+
         <div class="grid">
           <div>
             <label for="nome">Nome / Name</label>
@@ -124,12 +131,15 @@
           <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
         </div>
 
+        <!-- Campos ocultos calculados -->
+        <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
+
         <div class="row" style="margin-top:10px">
           <button id="btnEnviar" class="btn" type="submit">Enviar registo / Submit</button>
         </div>
 
         <div id="msg" class="success" style="display:none">
-          <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado"></span></div>
+          <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado">(gerado no backoffice)</span></div>
           <div class="hint">Guarde este código. / Please keep this code.</div>
         </div>
 
@@ -145,9 +155,6 @@
   </main>
 
   <script>
-    // 👉 Web App atual
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxyAV246TBtYJAniE1Bw83IhiGwLZwJ6BwuU8r12ECdGv0JhwiRAOChV1-FkkOxm2lk/exec';
-
     // Geolocalização
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -155,7 +162,6 @@
           const { latitude, longitude } = pos.coords;
           document.getElementById('latitude').value = latitude.toFixed(6);
           document.getElementById('longitude').value = longitude.toFixed(6);
-          window.__lat = latitude; window.__lon = longitude;
         },
         () => {},
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
@@ -184,63 +190,37 @@
       if (!outra) inpOutro.value = '';
     });
 
-    // Envio (FormData para evitar preflight CORS)
-    document.getElementById('formRegisto').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // Antes de submeter, preencher % de lua e garantir lat/lon
+    const form = document.getElementById('formRegisto');
+    const sink = document.getElementById('submitSink');
+    const btn  = document.getElementById('btnEnviar');
+    const msg  = document.getElementById('msg');
+    const err  = document.getElementById('msgErr');
 
-      // Validação "Outra"
+    form.addEventListener('submit', (e) => {
+      // validação "Outra"
       if (selConcelho.value === 'Outra' && !inpOutro.value.trim()) {
-        inpOutro.focus();
-        return;
+        e.preventDefault(); inpOutro.focus(); return;
       }
+      // calcular % lua
+      document.getElementById('faseLuaPct').value = approxMoonPhasePercent();
 
-      const fd = new FormData();
-      fd.append('nome', document.getElementById('nome').value.trim());
-      fd.append('estado', document.getElementById('estado').value);
-      fd.append('latitude', window.__lat ?? document.getElementById('latitude').value || '');
-      fd.append('longitude', window.__lon ?? document.getElementById('longitude').value || '');
-      fd.append('faseLua', document.getElementById('faseLua').value || '');
-      fd.append('faseLuaPct', approxMoonPhasePercent());
-      fd.append('local', document.getElementById('local').value || '');
-      fd.append('concelho', selConcelho.value || '');
-      fd.append('concelhoOutro', inpOutro.value.trim() || '');
-      fd.append('observacoes', document.getElementById('observacoes').value || '');
+      // estado UI
+      msg.style.display = 'none'; err.style.display = 'none';
+      btn.disabled = true; btn.textContent = 'A enviar…';
+    });
 
-      const btn = document.getElementById('btnEnviar');
-      const msg = document.getElementById('msg');
-      const err = document.getElementById('msgErr');
-      msg.style.display = 'none';
-      err.style.display = 'none';
-      btn.disabled = true;
-      const originalText = btn.textContent;
-      btn.textContent = 'A enviar…';
-
-      try {
-        // cache-busting
-        const url = WEBAPP_URL + '?t=' + Date.now();
-
-        const resp = await fetch(url, {
-          method: 'POST',
-          body: fd
-          // Sem headers personalizados => sem preflight
-        });
-
-        // Nem sempre o Web App devolve CORS para ler o JSON; mostramos OK mesmo sem parse
-        let data = { ok: true, id: '' };
-        try { data = await resp.json(); } catch (_) {}
-        document.getElementById('idGerado').textContent = data.id || '(enviado)';
-        msg.style.display = 'block';
-        (e.target).reset();
-        wrapOutro.style.display = 'none';
-        inpOutro.required = false;
-      } catch (_) {
-        err.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      }
+    // Quando o iframe carregar (resposta do Web App), assumimos sucesso
+    sink.addEventListener('load', () => {
+      btn.disabled = false; btn.textContent = 'Enviar registo / Submit';
+      msg.style.display = 'block';
+      form.reset();
+      wrapOutro.style.display = 'none';
+      inpOutro.required = false;
+      // ID não é legível cross-domain; mantemos nota “gerado no backoffice”
     });
   </script>
 </body>
 </html>
+
 
