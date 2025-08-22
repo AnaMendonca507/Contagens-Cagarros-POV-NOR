@@ -25,7 +25,7 @@
     .hint{font-size:.9rem;color:var(--muted)}
     .success{margin-top:14px;padding:12px;border-radius:12px;background:#0f2a1c;border:1px solid #1e4d36}
     .error{margin-top:14px;padding:12px;border-radius:12px;background:#2a0f13;border:1px solid #4d1e27}
-    .footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.9rem}
+    .footer{margin-top:18px;text-align:center;color:#cbd5e1;font-size:.9rem}
     .btn{background:var(--acc);border:none;color:#06231f;font-weight:800;cursor:pointer}
     .btn:disabled{opacity:.6;cursor:not-allowed}
   </style>
@@ -38,12 +38,12 @@
 
   <main>
     <div class="card">
-      <!-- iframe “sumidouro” para receber a resposta do Web App -->
+      <!-- IFRAME receptor da resposta do Web App -->
       <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
 
-      <!-- POST direto ao Web App (sem fetch) -->
+      <!-- POST direto ao Web App, sem fetch -->
       <form id="formRegisto" method="POST"
-            action="https://script.google.com/macros/s/AKfycbybMxH42-YV-0dfyMnKjTw5EREsjMw6cbINVIqSsb0vJvigvhgnSbV1c8_jFeUX2BTt/exec"
+            action="https://script.google.com/macros/s/AKfycbyj5ko243s68oX3Kqh2pJKw3Mkp9bRUEOmNCRj8Kihvm2Ph6CWZah6O8M_v5xiSpYCj/exec"
             target="submitSink" autocomplete="on">
 
         <div class="grid">
@@ -63,22 +63,6 @@
               <option value="Libertado">Libertado / Released</option>
             </select>
             <small class="hint">Use a opção mais adequada. / Choose the closest status.</small>
-          </div>
-
-          <div>
-            <label for="faseLua">Fase da Lua / Moon phase</label>
-            <select id="faseLua" name="faseLua">
-              <option value="" selected>Detetar automaticamente / Auto-detect</option>
-              <option value="Nova">Nova / New</option>
-              <option value="Crescente">Crescente / Waxing</option>
-              <option value="Quarto Crescente">Quarto Crescente / First Quarter</option>
-              <option value="Gibosa Crescente">Gibosa Crescente / Waxing Gibbous</option>
-              <option value="Cheia">Cheia / Full</option>
-              <option value="Gibosa Minguante">Gibosa Minguante / Waning Gibbous</option>
-              <option value="Quarto Minguante">Quarto Minguante / Last Quarter</option>
-              <option value="Minguante">Minguante / Waning</option>
-            </select>
-            <small class="hint">Se deixar em branco, calculamos. / If blank, we’ll auto-calc.</small>
           </div>
 
           <!-- Local -->
@@ -111,18 +95,6 @@
             <label for="concelhoOutro">Outro (especifique) / Other (specify)</label>
             <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta">
           </div>
-
-          <div>
-            <label for="latitude">Latitude</label>
-            <input id="latitude" name="latitude" placeholder="Auto" readonly>
-            <small class="hint">Detetada automaticamente (se autorizar). / Auto if permitted.</small>
-          </div>
-
-          <div>
-            <label for="longitude">Longitude</label>
-            <input id="longitude" name="longitude" placeholder="Auto" readonly>
-            <small class="hint">Detetada automaticamente (se autorizar). / Auto if permitted.</small>
-          </div>
         </div>
 
         <!-- Observações -->
@@ -131,15 +103,18 @@
           <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
         </div>
 
-        <!-- Campos ocultos calculados -->
+        <!-- Campos ocultos (auto) -->
+        <input type="hidden" id="latitude"   name="latitude"   value="">
+        <input type="hidden" id="longitude"  name="longitude"  value="">
         <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
+        <input type="hidden" id="faseLua"    name="faseLua"    value="">
 
         <div class="row" style="margin-top:10px">
           <button id="btnEnviar" class="btn" type="submit">Enviar registo / Submit</button>
         </div>
 
         <div id="msg" class="success" style="display:none">
-          <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado">(gerado no backoffice)</span></div>
+          <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado"></span></div>
           <div class="hint">Guarde este código. / Please keep this code.</div>
         </div>
 
@@ -155,7 +130,7 @@
   </main>
 
   <script>
-    // Geolocalização
+    // Geolocalização -> campos ocultos
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -168,16 +143,34 @@
       );
     }
 
-    // % de luz da Lua (aproximação)
-    function approxMoonPhasePercent(date=new Date()){
+    // % de luz e nome da fase da Lua (aprox)
+    function moonInfo(date=new Date()){
       const synodic = 29.53058867;
       const known = Date.UTC(2000,0,6,18,14);
       const days = (date.getTime() - known) / 86400000;
       const lunations = days / synodic;
+      const d = (lunations - Math.floor(lunations)) * synodic; // idade em dias
       const phase = (lunations - Math.floor(lunations)) * 2 * Math.PI;
-      const illum = (1 - Math.cos(phase)) / 2;
-      return Math.round(illum * 100);
+      const pct = Math.round(((1 - Math.cos(phase)) / 2) * 100);
+
+      let nome = 'Nova';
+      if (d < 1.84566) nome = 'Nova';
+      else if (d < 5.53699) nome = 'Crescente';
+      else if (d < 9.22831) nome = 'Quarto Crescente';
+      else if (d < 12.91963) nome = 'Gibosa Crescente';
+      else if (d < 16.61096) nome = 'Cheia';
+      else if (d < 20.30228) nome = 'Gibosa Minguante';
+      else if (d < 23.99361) nome = 'Quarto Minguante';
+      else if (d < 27.68493) nome = 'Minguante';
+      else nome = 'Nova';
+
+      return { pct, nome };
     }
+    (function setMoonFields(){
+      const { pct, nome } = moonInfo();
+      document.getElementById('faseLuaPct').value = pct;
+      document.getElementById('faseLua').value    = nome;
+    })();
 
     // Toggle "Outra" em Concelho
     const selConcelho = document.getElementById('concelho');
@@ -190,37 +183,47 @@
       if (!outra) inpOutro.value = '';
     });
 
-    // Antes de submeter, preencher % de lua e garantir lat/lon
+    // UI de envio
     const form = document.getElementById('formRegisto');
     const sink = document.getElementById('submitSink');
     const btn  = document.getElementById('btnEnviar');
     const msg  = document.getElementById('msg');
     const err  = document.getElementById('msgErr');
+    const idEl = document.getElementById('idGerado');
 
     form.addEventListener('submit', (e) => {
-      // validação "Outra"
       if (selConcelho.value === 'Outra' && !inpOutro.value.trim()) {
         e.preventDefault(); inpOutro.focus(); return;
       }
-      // calcular % lua
-      document.getElementById('faseLuaPct').value = approxMoonPhasePercent();
-
-      // estado UI
       msg.style.display = 'none'; err.style.display = 'none';
       btn.disabled = true; btn.textContent = 'A enviar…';
     });
 
-    // Quando o iframe carregar (resposta do Web App), assumimos sucesso
-    sink.addEventListener('load', () => {
+    // Recebe o ID do iframe (postMessage do Apps Script)
+    window.addEventListener('message', (evt) => {
+      const data = typeof evt.data === 'string' ? (()=>{ try{return JSON.parse(evt.data)}catch(_){return {}} })() : evt.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.ok) {
+        idEl.textContent = data.id || '(gerado)';
+        msg.style.display = 'block';
+        form.reset();
+        wrapOutro.style.display = 'none';
+        inpOutro.required = false;
+      } else {
+        err.style.display = 'block';
+      }
       btn.disabled = false; btn.textContent = 'Enviar registo / Submit';
-      msg.style.display = 'block';
-      form.reset();
-      wrapOutro.style.display = 'none';
-      inpOutro.required = false;
-      // ID não é legível cross-domain; mantemos nota “gerado no backoffice”
+    });
+
+    // Fallback: se iframe carregar sem postMessage, mostra sucesso genérico
+    sink.addEventListener('load', () => {
+      if (msg.style.display === 'none' && err.style.display === 'none') {
+        idEl.textContent = '(enviado)';
+        msg.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Enviar registo / Submit';
+        form.reset(); wrapOutro.style.display = 'none'; inpOutro.required = false;
+      }
     });
   </script>
 </body>
 </html>
-
-
