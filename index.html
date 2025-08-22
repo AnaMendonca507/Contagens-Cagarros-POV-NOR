@@ -24,6 +24,7 @@
     .row > *{flex:1}
     .hint{font-size:.9rem;color:var(--muted)}
     .success{margin-top:14px;padding:12px;border-radius:12px;background:#0f2a1c;border:1px solid #1e4d36}
+    .error{margin-top:14px;padding:12px;border-radius:12px;background:#2a0f13;border:1px solid #4d1e27}
     .footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.9rem}
     .btn{background:var(--acc);border:none;color:#06231f;font-weight:800;cursor:pointer}
     .btn:disabled{opacity:.6;cursor:not-allowed}
@@ -73,7 +74,7 @@
             <small class="hint">Se deixar em branco, calculamos. / If blank, we’ll auto-calc.</small>
           </div>
 
-          <!-- Município -> Local (bilingue) -->
+          <!-- Local -->
           <div>
             <label for="local"><strong>Local / Location</strong></label>
             <select id="local" name="local" required>
@@ -83,6 +84,25 @@
               <option value="Fora da marina/Porto">Fora da marina/Porto / Outside marina/Port</option>
             </select>
             <small class="hint">Escolha a opção mais adequada. / Choose the most suitable option.</small>
+          </div>
+
+          <!-- Concelho -->
+          <div>
+            <label for="concelho"><strong>Concelho / Municipality</strong></label>
+            <select id="concelho" name="concelho" required>
+              <option value="" selected disabled>— selecione / select —</option>
+              <option value="Nordeste">Nordeste</option>
+              <option value="Povoação">Povoação</option>
+              <option value="Faial da Terra">Faial da Terra</option>
+              <option value="Outra">Outra / Other</option>
+            </select>
+            <small class="hint">Concelho onde ocorreu o registo.</small>
+          </div>
+
+          <!-- Concelho: Outra (dinâmico) -->
+          <div id="concelhoOutroWrap" style="display:none">
+            <label for="concelhoOutro">Outro (especifique) / Other (specify)</label>
+            <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta">
           </div>
 
           <div>
@@ -98,7 +118,7 @@
           </div>
         </div>
 
-        <!-- NOVO: Observações -->
+        <!-- Observações -->
         <div style="margin-top:10px">
           <label for="observacoes">Observações / Notes</label>
           <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
@@ -112,6 +132,10 @@
           <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado"></span></div>
           <div class="hint">Guarde este código. / Please keep this code.</div>
         </div>
+
+        <div id="msgErr" class="error" style="display:none">
+          <div><strong>Falhou o envio.</strong> Verifique a ligação e tente novamente.</div>
+        </div>
       </form>
     </div>
 
@@ -121,7 +145,8 @@
   </main>
 
   <script>
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzRl08LBCL4XrSRnLHefPCX8IapUpE9QWEHe8jc5Sj_E9WnC2wLZDGOx0HqlhTcsDw/exec';
+    // 👉 Web App atual
+    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec';
 
     // Geolocalização
     if (navigator.geolocation) {
@@ -148,8 +173,26 @@
       return Math.round(illum * 100);
     }
 
+    // Toggle "Outra" em Concelho
+    const selConcelho = document.getElementById('concelho');
+    const wrapOutro   = document.getElementById('concelhoOutroWrap');
+    const inpOutro    = document.getElementById('concelhoOutro');
+    selConcelho.addEventListener('change', () => {
+      const outra = selConcelho.value === 'Outra';
+      wrapOutro.style.display = outra ? 'block' : 'none';
+      inpOutro.required = outra;
+      if (!outra) inpOutro.value = '';
+    });
+
+    // Envio
     document.getElementById('formRegisto').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      // Validação "Outra"
+      if (selConcelho.value === 'Outra' && !inpOutro.value.trim()) {
+        inpOutro.focus();
+        return;
+      }
 
       const payload = {
         nome: document.getElementById('nome').value.trim(),
@@ -159,34 +202,52 @@
         faseLua: document.getElementById('faseLua').value || '',
         faseLuaPct: approxMoonPhasePercent(),
         local: document.getElementById('local').value || '',
+        concelho: selConcelho.value || '',
+        concelhoOutro: inpOutro.value.trim() || '',
         observacoes: document.getElementById('observacoes').value || ''
       };
 
       const btn = document.getElementById('btnEnviar');
+      const msg = document.getElementById('msg');
+      const err = document.getElementById('msgErr');
+      msg.style.display = 'none';
+      err.style.display = 'none';
       btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = 'A enviar…';
 
       try {
-        const resp = await fetch(WEBAPP_URL, {
+        // cache-busting para evitar versões antigas em proxy
+        const url = WEBAPP_URL + '?t=' + Date.now();
+
+        const resp = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
+          // Se tiveres problemas de CORS, poderás usar mode: 'no-cors'
+          // mas não conseguirás ler o JSON de resposta.
         });
 
         let data = { ok: true, id: '' };
         try { data = await resp.json(); } catch (_) {}
 
         document.getElementById('idGerado').textContent = data.id || '(gerado)';
-        document.getElementById('msg').style.display = 'block';
-        e.target.reset();
-      } catch (err) {
-        alert('Falha ao enviar. Verifica a ligação do Web App.');
+        msg.style.display = 'block';
+        (e.target).reset();
+        // limpar estado do "Outra"
+        wrapOutro.style.display = 'none';
+        inpOutro.required = false;
+      } catch (ex) {
+        err.style.display = 'block';
       } finally {
         btn.disabled = false;
+        btn.textContent = originalText;
       }
     });
   </script>
 </body>
 </html>
+
 
 
 </body>
