@@ -1,229 +1,229 @@
 <!doctype html>
 <html lang="pt">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Registos de Cagarros — Terras do Priolo</title>
-  <meta name="description" content="Ajude-nos a registar cagarros nas Terras do Priolo.">
-  <style>
-    :root { --bg:#0b1320; --card:#121a2b; --muted:#94a3b8; --acc:#58c4b5; }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:linear-gradient(180deg,#0b1320,#0f1a33);color:#e5e7eb}
-    header{padding:28px 16px;text-align:center}
-    header h1{margin:0 0 6px;font-weight:800;letter-spacing:.3px}
-    header p{margin:0;color:var(--muted)}
-    main{max-width:960px;margin:0 auto;padding:16px}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
-    .grid{display:grid;grid-template-columns:1fr;gap:14px}
-    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
-    label{font-weight:600;margin-bottom:6px;display:block}
-    input,select,textarea,button{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0f172a;color:#e2e8f0}
-    select{cursor:pointer}
-    small{color:var(--muted)}
-    .row{display:flex;gap:12px}
-    .row > *{flex:1}
-    .hint{font-size:.9rem;color:var(--muted)}
-    .success{margin-top:14px;padding:12px;border-radius:12px;background:#0f2a1c;border:1px solid #1e4d36}
-    .error{margin-top:14px;padding:12px;border-radius:12px;background:#2a0f13;border:1px solid #4d1e27}
-    .footer{margin-top:18px;text-align:center;color:#cbd5e1;font-size:.9rem}
-    .btn{background:var(--acc);border:none;color:#06231f;font-weight:800;cursor:pointer}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Registos de Cagarros — Terras do Priolo</title>
+<style>
+  :root { --bg:#0b1320; --card:#121a2b; --muted:#94a3b8; --acc:#58c4b5; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;background:linear-gradient(180deg,#0b1320,#0f1a33);color:#e5e7eb}
+  header{padding:28px 16px;text-align:center}
+  header h1{margin:0 0 6px;font-weight:800}
+  header p{margin:0;color:var(--muted)}
+  main{max-width:960px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px}
+  .grid{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+  label{font-weight:600;margin-bottom:6px;display:block}
+  input,select,textarea,button{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0f172a;color:#e2e8f0}
+  select{cursor:pointer}
+  small{color:var(--muted)}
+  .row{display:flex;gap:12px}
+  .row > *{flex:1}
+  .hint{font-size:.9rem;color:var(--muted)}
+  .success{margin-top:14px;padding:12px;border-radius:12px;background:#0f2a1c;border:1px solid #1e4d36}
+  .error{margin-top:14px;padding:12px;border-radius:12px;background:#2a0f13;border:1px solid #4d1e27}
+  .btn{background:var(--acc);border:none;color:#06231f;font-weight:800;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+</style>
 </head>
 <body>
-  <header>
-    <h1>Registos de Cagarros — Terras do Priolo</h1>
-    <p>Ajude-nos a registar observações nas Terras do Priolo • Help us record shearwaters in the Priolo lands</p>
-  </header>
+<header>
+  <h1>Registos de Cagarros — Terras do Priolo</h1>
+  <p>Ajude-nos a registar observações nas Terras do Priolo</p>
+</header>
 
-  <main>
-    <div class="card">
-      <!-- IFRAME receptor da resposta do Web App -->
-      <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
+<main>
+  <div class="card">
+    <iframe name="submitSink" id="submitSink" style="display:none"></iframe>
 
-      <!-- POST direto ao Web App, sem fetch -->
-      <form id="formRegisto" method="POST"
-            action="https://script.google.com/macros/s/AKfycbyj5ko243s68oX3Kqh2pJKw3Mkp9bRUEOmNCRj8Kihvm2Ph6CWZah6O8M_v5xiSpYCj/exec"
-            target="submitSink" autocomplete="on">
+    <form id="formRegisto" method="POST"
+          action="https://script.google.com/macros/s/AKfycbz5MGCPaZto-aOYDuI3NdopBsTUU89yWYn9l0w9yugAjP9AxdIz8q5sQOUQjXD8YkI/exec"
+          target="submitSink" autocomplete="on">
 
-        <div class="grid">
-          <div>
-            <label for="nome">Nome / Name</label>
-            <input id="nome" name="nome" placeholder="Ex.: Ana Mendes" required>
-            <small class="hint">O seu nome ou da equipa. / Your name or team.</small>
-          </div>
-
-          <div>
-            <label for="estado">Estado da ave / Bird status</label>
-            <select id="estado" name="estado" required>
-              <option value="" disabled selected>— selecione / select —</option>
-              <option value="Vivo (saudável)">Vivo (saudável) / Alive (healthy)</option>
-              <option value="Vivo (ferido)">Vivo (ferido) / Alive (injured)</option>
-              <option value="Morto">Morto / Dead</option>
-              <option value="Libertado">Libertado / Released</option>
-            </select>
-            <small class="hint">Use a opção mais adequada. / Choose the closest status.</small>
-          </div>
-
-          <!-- Local -->
-          <div>
-            <label for="local"><strong>Local / Location</strong></label>
-            <select id="local" name="local" required>
-              <option value="" selected disabled>— selecione / select —</option>
-              <option value="Sem localização">Sem localização / No location</option>
-              <option value="Hotel de Cagarro">Hotel de Cagarro / Shearwater Hotel</option>
-              <option value="Fora da marina/Porto">Fora da marina/Porto / Outside marina/Port</option>
-            </select>
-            <small class="hint">Escolha a opção mais adequada. / Choose the most suitable option.</small>
-          </div>
-
-          <!-- Concelho -->
-          <div>
-            <label for="concelho"><strong>Concelho / Municipality</strong></label>
-            <select id="concelho" name="concelho" required>
-              <option value="" selected disabled>— selecione / select —</option>
-              <option value="Nordeste">Nordeste</option>
-              <option value="Povoação">Povoação</option>
-              <option value="Faial da Terra">Faial da Terra</option>
-              <option value="Outra">Outra / Other</option>
-            </select>
-            <small class="hint">Concelho onde ocorreu o registo.</small>
-          </div>
-
-          <!-- Concelho: Outra (dinâmico) -->
-          <div id="concelhoOutroWrap" style="display:none">
-            <label for="concelhoOutro">Outro (especifique) / Other (specify)</label>
-            <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta">
-          </div>
+      <div class="grid">
+        <div>
+          <label for="nome">Nome / Name</label>
+          <input id="nome" name="nome" placeholder="Ex.: Ana Mendes" required>
+          <small class="hint">O seu nome ou da equipa.</small>
         </div>
 
-        <!-- Observações -->
-        <div style="margin-top:10px">
-          <label for="observacoes">Observações / Notes</label>
-          <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
+        <div>
+          <label for="estado">Estado da ave / Bird status</label>
+          <select id="estado" name="estado" required>
+            <option value="" disabled selected>— selecione —</option>
+            <option value="Vivo (saudável)">Vivo (saudável)</option>
+            <option value="Vivo (ferido)">Vivo (ferido)</option>
+            <option value="Morto">Morto</option>
+            <option value="Libertado">Libertado</option>
+          </select>
         </div>
 
-        <!-- Campos ocultos (auto) -->
-        <input type="hidden" id="latitude"   name="latitude"   value="">
-        <input type="hidden" id="longitude"  name="longitude"  value="">
-        <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
-        <input type="hidden" id="faseLua"    name="faseLua"    value="">
-
-        <div class="row" style="margin-top:10px">
-          <button id="btnEnviar" class="btn" type="submit">Enviar registo / Submit</button>
+        <div>
+          <label for="local"><strong>Local</strong></label>
+          <select id="local" name="local" required>
+            <option value="" selected disabled>— selecione —</option>
+            <option value="Sem localização">Sem localização</option>
+            <option value="Hotel de Cagarro">Hotel de Cagarro</option>
+            <option value="Fora da marina/Porto">Fora da marina/Porto</option>
+          </select>
         </div>
 
-        <div id="msg" class="success" style="display:none">
-          <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado"></span></div>
-          <div class="hint">Guarde este código. / Please keep this code.</div>
+        <div>
+          <label for="concelho"><strong>Concelho</strong></label>
+          <select id="concelho" name="concelho" required>
+            <option value="" selected disabled>— selecione —</option>
+            <option value="Nordeste">Nordeste</option>
+            <option value="Povoação">Povoação</option>
+            <option value="Faial da Terra">Faial da Terra</option>
+            <option value="Outra">Outra</option>
+          </select>
         </div>
 
-        <div id="msgErr" class="error" style="display:none">
-          <div><strong>Falhou o envio.</strong> Verifique a ligação e tente novamente.</div>
+        <div id="concelhoOutroWrap" style="display:none">
+          <label for="concelhoOutro">Outro (especifique)</label>
+          <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta">
         </div>
-      </form>
-    </div>
+      </div>
 
-    <p class="footer">
-      Repositório: <a href="https://anamendonca507.github.io/Contagens-Cagarros-POV-NOR/" target="_blank" rel="noopener">/Contagens-Cagarros-POV-NOR/</a>
-    </p>
-  </main>
+      <div style="margin-top:10px">
+        <label for="observacoes">Observações</label>
+        <textarea id="observacoes" name="observacoes" rows="3" placeholder="Opcional"></textarea>
+      </div>
 
-  <script>
-    // Geolocalização -> campos ocultos
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          document.getElementById('latitude').value = latitude.toFixed(6);
-          document.getElementById('longitude').value = longitude.toFixed(6);
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
-      );
+      <!-- Ocultos (auto) -->
+      <input type="hidden" id="latitude"   name="latitude"   value="">
+      <input type="hidden" id="longitude"  name="longitude"  value="">
+      <input type="hidden" id="faseLuaPct" name="faseLuaPct" value="">
+      <input type="hidden" id="faseLua"    name="faseLua"    value="">
+
+      <div class="row" style="margin-top:10px">
+        <button id="btnEnviar" class="btn" type="submit">Enviar registo</button>
+      </div>
+
+      <div id="msg" class="success" style="display:none">
+        <div><strong>Obrigado!</strong> Código do registo: <span id="idGerado"></span></div>
+      </div>
+      <div id="msgErr" class="error" style="display:none">
+        <div><strong>Falha no envio.</strong> Tente novamente.</div>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script>
+  // Geolocalização (oculto)
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        document.getElementById('latitude').value = latitude.toFixed(6);
+        document.getElementById('longitude').value = longitude.toFixed(6);
+      }, () => {}, { enableHighAccuracy:true, timeout:8000, maximumAge:30000 }
+    );
+  }
+
+  // Fase da lua (oculto)
+  function moonInfo(date=new Date()){
+    const synodic=29.53058867, known=Date.UTC(2000,0,6,18,14);
+    const days=(date.getTime()-known)/86400000, lun=days/synodic;
+    const d=(lun-Math.floor(lun))*synodic, ph=(lun-Math.floor(lun))*2*Math.PI;
+    const pct=Math.round(((1-Math.cos(ph))/2)*100);
+    let nome='Nova';
+    if (d<1.84566) nome='Nova';
+    else if (d<5.53699) nome='Crescente';
+    else if (d<9.22831) nome='Quarto Crescente';
+    else if (d<12.91963) nome='Gibosa Crescente';
+    else if (d<16.61096) nome='Cheia';
+    else if (d<20.30228) nome='Gibosa Minguante';
+    else if (d<23.99361) nome='Quarto Minguante';
+    else if (d<27.68493) nome='Minguante';
+    else nome='Nova';
+    return { pct, nome };
+  }
+  (function(){ const {pct,nome}=moonInfo();
+    document.getElementById('faseLuaPct').value=pct;
+    document.getElementById('faseLua').value=nome;
+  })();
+
+  // Concelho -> Outra
+  const selCon = document.getElementById('concelho');
+  const wrapOu = document.getElementById('concelhoOutroWrap');
+  const inpOu  = document.getElementById('concelhoOutro');
+  selCon.addEventListener('change', ()=> {
+    const outra = selCon.value==='Outra';
+    wrapOu.style.display = outra?'block':'none';
+    inpOu.required = outra;
+    if (!outra) inpOu.value = '';
+  });
+
+  // UI envio + receção do ID
+  const form = document.getElementById('formRegisto');
+  const sink = document.getElementById('submitSink');
+  const btn  = document.getElementById('btnEnviar');
+  const msg  = document.getElementById('msg');
+  const err  = document.getElementById('msgErr');
+  const idEl = document.getElementById('idGerado');
+
+  let gotId = false, fallbackTimer = null;
+
+  form.addEventListener('submit', (e) => {
+    if (selCon.value === 'Outra' && !inpOu.value.trim()) {
+      e.preventDefault(); inpOu.focus(); return;
     }
+    msg.style.display='none'; err.style.display='none';
+    btn.disabled=true; btn.textContent='A enviar…';
+    gotId = false;
 
-    // % de luz e nome da fase da Lua (aprox)
-    function moonInfo(date=new Date()){
-      const synodic = 29.53058867;
-      const known = Date.UTC(2000,0,6,18,14);
-      const days = (date.getTime() - known) / 86400000;
-      const lunations = days / synodic;
-      const d = (lunations - Math.floor(lunations)) * synodic; // idade em dias
-      const phase = (lunations - Math.floor(lunations)) * 2 * Math.PI;
-      const pct = Math.round(((1 - Math.cos(phase)) / 2) * 100);
+    // Fallback JSONP caso não chegue postMessage em 2s
+    clearTimeout(fallbackTimer);
+    fallbackTimer = setTimeout(()=> {
+      if (gotId) return;
+      const cbName = '__receiveLastId_' + Date.now();
+      window[cbName] = function(data){
+        if (data && data.ok && data.id) {
+          idEl.textContent = data.id;
+          msg.style.display='block';
+        } else {
+          err.style.display='block';
+        }
+        cleanup();
+      };
+      const s = document.createElement('script');
+      s.src = 'https://script.google.com/macros/s/AKfycbyBJV6p9ESvpYpx5bS2PTZhPK7VCMlupNes4ZgL7S3rh1ip5BB8nmh7T5Znu1-eAnNG/exec?last=1&callback='+cbName+'&t='+Date.now();
+      s.async = true;
+      document.body.appendChild(s);
 
-      let nome = 'Nova';
-      if (d < 1.84566) nome = 'Nova';
-      else if (d < 5.53699) nome = 'Crescente';
-      else if (d < 9.22831) nome = 'Quarto Crescente';
-      else if (d < 12.91963) nome = 'Gibosa Crescente';
-      else if (d < 16.61096) nome = 'Cheia';
-      else if (d < 20.30228) nome = 'Gibosa Minguante';
-      else if (d < 23.99361) nome = 'Quarto Minguante';
-      else if (d < 27.68493) nome = 'Minguante';
-      else nome = 'Nova';
+      function cleanup(){
+        btn.disabled=false; btn.textContent='Enviar registo';
+        delete window[cbName];
+        if (s && s.parentNode) s.parentNode.removeChild(s);
+        form.reset(); wrapOu.style.display='none'; inpOu.required=false;
+      }
+    }, 2000);
+  });
 
-      return { pct, nome };
+  // Recebe o postMessage com o ID
+  window.addEventListener('message', (evt) => {
+    const data = typeof evt.data === 'string' ? (()=>{try{return JSON.parse(evt.data)}catch(_){return {}}})() : evt.data;
+    if (!data || typeof data !== 'object') return;
+    if (data.ok && data.id) {
+      gotId = true;
+      clearTimeout(fallbackTimer);
+      idEl.textContent = data.id;
+      msg.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar registo';
+      form.reset(); wrapOu.style.display='none'; inpOu.required=false;
+    } else if (data && data.ok === false) {
+      clearTimeout(fallbackTimer);
+      err.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar registo';
     }
-    (function setMoonFields(){
-      const { pct, nome } = moonInfo();
-      document.getElementById('faseLuaPct').value = pct;
-      document.getElementById('faseLua').value    = nome;
-    })();
+  });
 
-    // Toggle "Outra" em Concelho
-    const selConcelho = document.getElementById('concelho');
-    const wrapOutro   = document.getElementById('concelhoOutroWrap');
-    const inpOutro    = document.getElementById('concelhoOutro');
-    selConcelho.addEventListener('change', () => {
-      const outra = selConcelho.value === 'Outra';
-      wrapOutro.style.display = outra ? 'block' : 'none';
-      inpOutro.required = outra;
-      if (!outra) inpOutro.value = '';
-    });
-
-    // UI de envio
-    const form = document.getElementById('formRegisto');
-    const sink = document.getElementById('submitSink');
-    const btn  = document.getElementById('btnEnviar');
-    const msg  = document.getElementById('msg');
-    const err  = document.getElementById('msgErr');
-    const idEl = document.getElementById('idGerado');
-
-    form.addEventListener('submit', (e) => {
-      if (selConcelho.value === 'Outra' && !inpOutro.value.trim()) {
-        e.preventDefault(); inpOutro.focus(); return;
-      }
-      msg.style.display = 'none'; err.style.display = 'none';
-      btn.disabled = true; btn.textContent = 'A enviar…';
-    });
-
-    // Recebe o ID do iframe (postMessage do Apps Script)
-    window.addEventListener('message', (evt) => {
-      const data = typeof evt.data === 'string' ? (()=>{ try{return JSON.parse(evt.data)}catch(_){return {}} })() : evt.data;
-      if (!data || typeof data !== 'object') return;
-      if (data.ok) {
-        idEl.textContent = data.id || '(gerado)';
-        msg.style.display = 'block';
-        form.reset();
-        wrapOutro.style.display = 'none';
-        inpOutro.required = false;
-      } else {
-        err.style.display = 'block';
-      }
-      btn.disabled = false; btn.textContent = 'Enviar registo / Submit';
-    });
-
-    // Fallback: se iframe carregar sem postMessage, mostra sucesso genérico
-    sink.addEventListener('load', () => {
-      if (msg.style.display === 'none' && err.style.display === 'none') {
-        idEl.textContent = '(enviado)';
-        msg.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'Enviar registo / Submit';
-        form.reset(); wrapOutro.style.display = 'none'; inpOutro.required = false;
-      }
-    });
-  </script>
+  // Se o iframe carregar mas não vier mensagem, deixamos o fallback tratar
+  sink.addEventListener('load', ()=>{/* intencionalmente vazio */});
+</script>
 </body>
 </html>
