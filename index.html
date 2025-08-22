@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#2f4595" />
-<title>Registo de Cagarros POV NOR / Cory's Shearwater Rescue</title>
+<title>Registo de Cagarros POVOAÇAO NORDESTE/ Cory's Shearwater Rescue</title>
 <style>
   :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
   body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
@@ -39,22 +39,17 @@
   .code-actions{display:flex;justify-content:center;gap:10px;margin-top:8px}
   .small-note{text-align:center;font-size:12px;color:var(--muted);margin-top:6px}
 
-  /* Logo no fim com tinte azul aplicado a PNG branco */
+  /* Logo no fim (branco) */
   footer{margin:28px 0 6px;display:flex;justify-content:center}
-  footer img.logo{max-width:190px;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
-  /* TINT: converte branco -> azul aproximado #2f4595 */
-  footer img.logo.tint-blue{
-    filter:
-      brightness(0) saturate(100%)
-      invert(20%) sepia(36%) saturate(1391%) hue-rotate(206deg)
-      brightness(88%) contrast(95%)
-      drop-shadow(0 2px 4px rgba(0,0,0,.25));
+  footer img.logo{
+    max-width:190px;height:auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
   }
 </style>
 </head>
 <body>
 
-<h2>Registo de Cagarros POV NOR<br/>Cory's Shearwater Rescue</h2>
+<h2>Registo de Cagarros POVOAÇAO NORDESTE<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
 
 <div id="netStatus" class="statusbar hidden"></div>
@@ -115,12 +110,12 @@
 </div>
 
 <footer>
-  <!-- usa o ficheiro que subiste -->
-  <img src="./spea-logo-white.png" alt="SPEA" class="logo tint-blue" />
+  <!-- logo branco -->
+  <img src="./spea-logo-white.png" alt="SPEA" class="logo" />
 </footer>
 
 <script>
-  // 👉 Cola aqui o URL do teu Web App
+  // URL do teu Web App (Apps Script)
   const scriptURL = "https://script.google.com/macros/s/AKfycbzJ4oi4PXAQJJTm8jEETT6xgWB3KFz6IoZvlUrEMOQuwlVklLzIIvv-y3q2Otlkt8Uj/exec";
 
   // GPS
@@ -177,6 +172,7 @@
     };
 
     try{
+      // Sem headers -> sem preflight; Apps Script aceita o corpo como texto/JSON
       const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(payload)});
       const text=await res.text(); let data=null; try{ data=JSON.parse(text);}catch(_){}
       if(res.ok && data && data.status==="success"){
@@ -228,6 +224,7 @@
 </script>
 </body>
 </html>
+
 
 
 
