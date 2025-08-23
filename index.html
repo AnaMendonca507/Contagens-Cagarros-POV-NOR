@@ -94,6 +94,7 @@
   <!-- GPS oculto -->
   <input type="hidden" id="latitude"  name="latitude" />
   <input type="hidden" id="longitude" name="longitude" />
+  <input type="hidden" id="gpsAcc"    name="gpsAcc" />
 
   <button type="submit" id="sendBtn" disabled>📍 A obter GPS… / Getting GPS…</button>
   <button type="button" id="refreshGps" class="ghost" style="margin-top:8px">🔄 Atualizar GPS</button>
@@ -113,8 +114,8 @@
 <footer><img src="./spea-logo-white.png" alt="SPEA" class="logo" /></footer>
 
 <script>
-  // URL do Web App (Apps Script)
-  const scriptURL = "https://script.google.com/macros/s/AKfycbxW4SkB3TVz-ZJ2MdQFjGjEGVv_jCg0sVckSxG3Tte1oSuAQOV9sg1CoUO19xxQiYqN/exec";
+  // URL do Web App (Apps Script) — A TUA IMPLEMENTAÇÃO
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzIP8HhmrNoVVLg3bUhkiuAOSOhHZsrVO-yI3dpQ-tRkjfx_zkyjyQ1rer-5O9121hh/exec";
 
   // ===== GPS preciso (exige ≤ 10 m; bloqueia envio até atingir) =====
   document.addEventListener("DOMContentLoaded", () => {
@@ -123,6 +124,7 @@
     const MIN_STABLE   = 2500;       // aguardar 2.5 s após 1ª leitura
     const lat = document.getElementById("latitude");
     const lon = document.getElementById("longitude");
+    const acc = document.getElementById("gpsAcc");
     const sendBtn = document.getElementById("sendBtn");
     const refreshBtn = document.getElementById("refreshGps");
     const hint = document.getElementById("gpsHint");
@@ -142,6 +144,7 @@
     function setFix(f){
       lat.value = f.lat.toFixed(6);
       lon.value = f.lon.toFixed(6);
+      acc.value = Math.round(f.acc); // <<< envia Precisão (m)
       hint.textContent = `Precisão: ±${Math.round(f.acc)} m` + (f.acc<=REQUIRED_ACC ? " ✅" : ` — a melhorar até ≤ ${REQUIRED_ACC} m…`);
     }
 
@@ -166,11 +169,11 @@
 
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
-          const acc = pos.coords.accuracy || 9999;
-          const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc };
-          if (!best || acc < best.acc) { best = fix; setFix(best); }
+          const accm = pos.coords.accuracy || 9999;
+          const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: accm };
+          if (!best || accm < best.acc) { best = fix; setFix(best); }
           // aceitar quando ≤10 m e já passou um pouco
-          if (acc <= REQUIRED_ACC && (Date.now()-t0) > MIN_STABLE){
+          if (accm <= REQUIRED_ACC && (Date.now()-t0) > MIN_STABLE){
             try { navigator.geolocation.clearWatch(watchId); } catch(_){}
             watchId = null;
             hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
@@ -208,7 +211,7 @@
       }, MAX_WINDOW);
     }
 
-    // primeir a tentativa
+    // primeira tentativa ao abrir
     startGPS();
     refreshBtn.addEventListener("click", startGPS);
   });
@@ -254,7 +257,8 @@
       local:document.getElementById("local").value,
       observacoes:document.getElementById("observacoes").value,
       latitude:document.getElementById("latitude").value,
-      longitude:document.getElementById("longitude").value
+      longitude:document.getElementById("longitude").value,
+      gpsAcc:document.getElementById("gpsAcc").value   // <<< manda Precisão (m)
     };
 
     try{
