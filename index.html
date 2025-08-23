@@ -97,7 +97,6 @@
   <input type="hidden" id="gpsAcc"    name="gpsAcc" />
 
   <button type="submit" id="sendBtn" disabled>📍 A obter GPS… / Getting GPS…</button>
-  <button type="button" id="refreshGps" class="ghost" style="margin-top:8px">🔄 Atualizar GPS</button>
   <div id="gpsHint" class="hint"></div>
 </form>
 
@@ -117,103 +116,72 @@
   // URL do Web App (Apps Script) — A TUA IMPLEMENTAÇÃO
   const scriptURL = "https://script.google.com/macros/s/AKfycbzIP8HhmrNoVVLg3bUhkiuAOSOhHZsrVO-yI3dpQ-tRkjfx_zkyjyQ1rer-5O9121hh/exec";
 
-  // ===== GPS preciso (exige ≤ 10 m; bloqueia envio até atingir) =====
+  // ===== GPS automático (exige ≤ 10 m; reinicia sozinho; envia precisão) =====
   document.addEventListener("DOMContentLoaded", () => {
-    const REQUIRED_ACC = 10;         // metros
-    const MAX_WINDOW   = 60000;      // ler durante no máx. 60 s
-    const MIN_STABLE   = 2500;       // aguardar 2.5 s após 1ª leitura
-    const lat = document.getElementById("latitude");
-    const lon = document.getElementById("longitude");
-    const acc = document.getElementById("gpsAcc");
+    const REQUIRED_ACC = 10;     // metros
+    const WATCH_MAX    = 30000;  // 30s por sessão
+    const RETRY_GAP    = 1500;   // 1.5s entre sessões
+    const STABLE_MS    = 2500;   // manter ~2.5s antes de aceitar
+
+    const latEl = document.getElementById("latitude");
+    const lonEl = document.getElementById("longitude");
+    const accEl = document.getElementById("gpsAcc");
     const sendBtn = document.getElementById("sendBtn");
-    const refreshBtn = document.getElementById("refreshGps");
     const hint = document.getElementById("gpsHint");
 
-    let watchId = null;
-    let best = null;
-    let t0 = 0;
+    let watchId = null, timer = null, best = null, t0 = 0;
 
-    function lockSend(msg){
-      sendBtn.disabled = true;
-      sendBtn.textContent = msg || "📍 A obter GPS… / Getting GPS…";
-    }
-    function unlockSend(){
-      sendBtn.disabled = false;
-      sendBtn.textContent = "Enviar / Submit";
-    }
-    function setFix(f){
-      lat.value = f.lat.toFixed(6);
-      lon.value = f.lon.toFixed(6);
-      acc.value = Math.round(f.acc); // <<< envia Precisão (m)
+    function lockSend(txt){ sendBtn.disabled = true;  sendBtn.textContent = txt || "📍 A obter GPS…"; }
+    function unlockSend(){  sendBtn.disabled = false; sendBtn.textContent = "Enviar / Submit"; }
+    function showFix(f){
+      latEl.value = f.lat.toFixed(6);
+      lonEl.value = f.lon.toFixed(6);
+      accEl.value = Math.round(f.acc);
       hint.textContent = `Precisão: ±${Math.round(f.acc)} m` + (f.acc<=REQUIRED_ACC ? " ✅" : ` — a melhorar até ≤ ${REQUIRED_ACC} m…`);
     }
-
-    async function ensurePermission(){
-      try{
-        const st = await navigator.permissions.query({name:"geolocation"});
-        if (st.state === "denied") hint.textContent = "⚠️ Localização negada. Ative nas definições do browser/sistema.";
-      }catch(_){}
+    function clearWatch(){
+      try{ if (watchId!==null) navigator.geolocation.clearWatch(watchId); }catch(_){}
+      watchId = null; if (timer){ clearTimeout(timer); timer=null; }
     }
-
-    function startGPS(){
-      if (!("geolocation" in navigator)){
-        hint.textContent = "Dispositivo sem geolocalização.";
-        return lockSend("Sem GPS");
-      }
-      ensurePermission();
-      best = null; t0 = Date.now();
+    function startWatch(){
+      clearWatch(); best=null; t0=Date.now();
       lockSend("📍 A obter GPS…");
+      if (!("geolocation" in navigator)){ hint.textContent="Dispositivo sem geolocalização."; return; }
       hint.textContent = `A procurar satélites (alvo ≤ ${REQUIRED_ACC} m)…`;
 
-      try { if (watchId!==null) navigator.geolocation.clearWatch(watchId); } catch(_){}
-
       watchId = navigator.geolocation.watchPosition(
-        (pos) => {
-          const accm = pos.coords.accuracy || 9999;
-          const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc: accm };
-          if (!best || accm < best.acc) { best = fix; setFix(best); }
-          // aceitar quando ≤10 m e já passou um pouco
-          if (accm <= REQUIRED_ACC && (Date.now()-t0) > MIN_STABLE){
-            try { navigator.geolocation.clearWatch(watchId); } catch(_){}
-            watchId = null;
-            hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
-            unlockSend();
-          }
-        },
-        (err) => {
-          try { if (watchId!==null) navigator.geolocation.clearWatch(watchId); } catch(_){}
-          watchId = null;
-          hint.textContent = `Sem GPS preciso (${err.message}). Tenta novamente.`;
-          lockSend("GPS indisponível");
-        },
-        { enableHighAccuracy: true, timeout: MAX_WINDOW, maximumAge: 0 }
-      );
-
-      // timeout global
-      setTimeout(() => {
-        if (watchId!==null){
-          try { navigator.geolocation.clearWatch(watchId); } catch(_){}
-          watchId = null;
-        }
-        if (best){
-          setFix(best);
-          if (best.acc <= REQUIRED_ACC){
+        pos => {
+          const acc = pos.coords.accuracy || 9999;
+          const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc };
+          if (!best || acc < best.acc){ best = fix; showFix(best); }
+          if (best.acc <= REQUIRED_ACC && (Date.now()-t0) > STABLE_MS){
             hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
             unlockSend();
           } else {
-            hint.textContent = `⏱️ Timeout: melhor obtido ±${Math.round(best.acc)} m (> ${REQUIRED_ACC} m). Carrega em "Atualizar GPS" e espera ao ar livre.`;
-            lockSend("Precisão insuficiente");
+            lockSend("📍 A melhorar precisão…");
           }
-        } else {
-          hint.textContent = "⏱️ Timeout sem leituras. Verifica permissões e tenta de novo.";
-          lockSend("Sem leituras");
-        }
-      }, MAX_WINDOW);
+        },
+        err => {
+          clearWatch();
+          hint.textContent = `Sem GPS preciso (${err.message}). Nova tentativa…`;
+          setTimeout(startWatch, RETRY_GAP);
+        },
+        { enableHighAccuracy: true, timeout: WATCH_MAX, maximumAge: 0 }
+      );
+
+      // reiniciar sessão periodicamente (evita ficar preso)
+      timer = setTimeout(() => {
+        clearWatch();
+        if (!best) hint.textContent = "A tentar novamente obter fix…";
+        setTimeout(startWatch, RETRY_GAP);
+      }, WATCH_MAX);
     }
 
-    // primeira tentativa ao abrir
-    startGPS();
-    refreshBtn.addEventListener("click", startGPS);
+    // arranque + pausa/retoma ao mudar de separador
+    startWatch();
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) clearWatch(); else startWatch();
+    });
   });
 
   // ===== Concelho → “Outra” =====
@@ -258,7 +226,7 @@
       observacoes:document.getElementById("observacoes").value,
       latitude:document.getElementById("latitude").value,
       longitude:document.getElementById("longitude").value,
-      gpsAcc:document.getElementById("gpsAcc").value   // <<< manda Precisão (m)
+      gpsAcc:document.getElementById("gpsAcc").value
     };
 
     try{
