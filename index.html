@@ -9,7 +9,8 @@
   :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
   body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
   h2{ text-align:center;margin:8px 0 4px;line-height:1.2 }
-  p.subtitle{ text-align:center;margin:0 0 16px;color:var(--muted);font-size:14px }
+  p.subtitle{ text-align:center;margin:0 0 10px;color:var(--muted);font-size:14px }
+  .need{ text-align:center; font-size:12px; color:#cfe0ff; margin-bottom:10px }
 
   form{display:block}
   label{font-weight:700;display:block;margin-top:14px}
@@ -20,7 +21,7 @@
   button.ghost{background:transparent;border:2px solid #fff;color:#fff}
   button:disabled{background:#9ab6a0;cursor:not-allowed}
 
-  .hint{font-size:12px;color:#f0f3ff;margin-top:4px}
+  .hint{font-size:12px;color:#f0f3ff;margin-top:6px}
   .hidden{display:none!important}
   .statusbar{margin:8px 0 10px;padding:10px;border-radius:10px;font-weight:700;text-align:center}
   .online{background:#e6f4ea;color:#1e7e34;border:1px solid #c7efd3}
@@ -41,16 +42,14 @@
 
   /* Logo no fim (branco) */
   footer{margin:28px 0 6px;display:flex;justify-content:center}
-  footer img.logo{
-    max-width:190px;height:auto;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
-  }
+  footer img.logo{max-width:190px;height:auto;filter: drop-shadow(0 2px 4px rgba(0,0,0,.25))}
 </style>
 </head>
 <body>
 
 <h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
+<p class="need">Requisito de precisão do GPS: <strong>≤ 10 m</strong></p>
 
 <div id="netStatus" class="statusbar hidden"></div>
 
@@ -96,7 +95,9 @@
   <input type="hidden" id="latitude"  name="latitude" />
   <input type="hidden" id="longitude" name="longitude" />
 
-  <button type="submit" id="sendBtn" disabled>📍 A obter localização... / Getting location...</button>
+  <button type="submit" id="sendBtn" disabled>📍 A obter GPS… / Getting GPS…</button>
+  <button type="button" id="refreshGps" class="ghost" style="margin-top:8px">🔄 Atualizar GPS</button>
+  <div id="gpsHint" class="hint"></div>
 </form>
 
 <button id="flushBtn" class="secondary hidden">📤 Enviar Pendentes / Send Pending</button>
@@ -109,64 +110,120 @@
   <div class="small-note">Guarde este código. / Keep this code.</div>
 </div>
 
-<footer>
-  <img src="./spea-logo-white.png" alt="SPEA" class="logo" />
-</footer>
+<footer><img src="./spea-logo-white.png" alt="SPEA" class="logo" /></footer>
 
 <script>
-  // URL do teu Web App (Apps Script)
+  // URL do Web App (Apps Script)
   const scriptURL = "https://script.google.com/macros/s/AKfycbxW4SkB3TVz-ZJ2MdQFjGjEGVv_jCg0sVckSxG3Tte1oSuAQOV9sg1CoUO19xxQiYqN/exec";
 
-  // ===== GPS preciso (frontend) =====
+  // ===== GPS preciso (exige ≤ 10 m; bloqueia envio até atingir) =====
   document.addEventListener("DOMContentLoaded", () => {
+    const REQUIRED_ACC = 10;         // metros
+    const MAX_WINDOW   = 60000;      // ler durante no máx. 60 s
+    const MIN_STABLE   = 2500;       // aguardar 2.5 s após 1ª leitura
     const lat = document.getElementById("latitude");
     const lon = document.getElementById("longitude");
-    const btn = document.getElementById("sendBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const refreshBtn = document.getElementById("refreshGps");
+    const hint = document.getElementById("gpsHint");
 
-    // linha de estado logo abaixo do botão
-    const status = document.createElement("div");
-    status.className = "hint";
-    btn.insertAdjacentElement("afterend", status);
+    let watchId = null;
+    let best = null;
+    let t0 = 0;
 
-    function enableSend(){
-      btn.disabled = false;
-      btn.textContent = "Enviar / Submit";
+    function lockSend(msg){
+      sendBtn.disabled = true;
+      sendBtn.textContent = msg || "📍 A obter GPS… / Getting GPS…";
+    }
+    function unlockSend(){
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Enviar / Submit";
+    }
+    function setFix(f){
+      lat.value = f.lat.toFixed(6);
+      lon.value = f.lon.toFixed(6);
+      hint.textContent = `Precisão: ±${Math.round(f.acc)} m` + (f.acc<=REQUIRED_ACC ? " ✅" : ` — a melhorar até ≤ ${REQUIRED_ACC} m…`);
     }
 
-    function onOK(pos){
-      lat.value = pos.coords.latitude.toFixed(6);
-      lon.value = pos.coords.longitude.toFixed(6);
-      status.textContent = `GPS ok (±${Math.round(pos.coords.accuracy)} m)`;
-      enableSend();
-    }
-    function onErr(err){
-      status.textContent = `Sem GPS preciso (${err.message}). A posição pode ser aproximada.`;
-      enableSend();
+    async function ensurePermission(){
+      try{
+        const st = await navigator.permissions.query({name:"geolocation"});
+        if (st.state === "denied") hint.textContent = "⚠️ Localização negada. Ative nas definições do browser/sistema.";
+      }catch(_){}
     }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        onOK, onErr,
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    function startGPS(){
+      if (!("geolocation" in navigator)){
+        hint.textContent = "Dispositivo sem geolocalização.";
+        return lockSend("Sem GPS");
+      }
+      ensurePermission();
+      best = null; t0 = Date.now();
+      lockSend("📍 A obter GPS…");
+      hint.textContent = `A procurar satélites (alvo ≤ ${REQUIRED_ACC} m)…`;
+
+      try { if (watchId!==null) navigator.geolocation.clearWatch(watchId); } catch(_){}
+
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const acc = pos.coords.accuracy || 9999;
+          const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc };
+          if (!best || acc < best.acc) { best = fix; setFix(best); }
+          // aceitar quando ≤10 m e já passou um pouco
+          if (acc <= REQUIRED_ACC && (Date.now()-t0) > MIN_STABLE){
+            try { navigator.geolocation.clearWatch(watchId); } catch(_){}
+            watchId = null;
+            hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
+            unlockSend();
+          }
+        },
+        (err) => {
+          try { if (watchId!==null) navigator.geolocation.clearWatch(watchId); } catch(_){}
+          watchId = null;
+          hint.textContent = `Sem GPS preciso (${err.message}). Tenta novamente.`;
+          lockSend("GPS indisponível");
+        },
+        { enableHighAccuracy: true, timeout: MAX_WINDOW, maximumAge: 0 }
       );
-    } else {
-      status.textContent = "Dispositivo sem geolocalização.";
-      enableSend();
+
+      // timeout global
+      setTimeout(() => {
+        if (watchId!==null){
+          try { navigator.geolocation.clearWatch(watchId); } catch(_){}
+          watchId = null;
+        }
+        if (best){
+          setFix(best);
+          if (best.acc <= REQUIRED_ACC){
+            hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
+            unlockSend();
+          } else {
+            hint.textContent = `⏱️ Timeout: melhor obtido ±${Math.round(best.acc)} m (> ${REQUIRED_ACC} m). Carrega em "Atualizar GPS" e espera ao ar livre.`;
+            lockSend("Precisão insuficiente");
+          }
+        } else {
+          hint.textContent = "⏱️ Timeout sem leituras. Verifica permissões e tenta de novo.";
+          lockSend("Sem leituras");
+        }
+      }, MAX_WINDOW);
     }
+
+    // primeir a tentativa
+    startGPS();
+    refreshBtn.addEventListener("click", startGPS);
   });
 
   // ===== Concelho → “Outra” =====
   const selCon=document.getElementById("concelho");
   const wrapOu=document.getElementById("concelhoOutroWrap");
   const inpOu=document.getElementById("concelhoOutro");
-  selCon.addEventListener("change",()=>{ const outra=selCon.value==="Outra"; wrapOu.classList.toggle("hidden",!outra); inpOu.required=outra; if(!outra) inpOu.value=""; });
+  selCon?.addEventListener("change",()=>{ const outra=selCon.value==="Outra"; wrapOu.classList.toggle("hidden",!outra); inpOu.required=outra; if(!outra) inpOu.value=""; });
 
   // ===== Offline queue =====
   const LS_KEY="cagarros_pendentes_v1";
   const netBar=document.getElementById("netStatus");
   const flushBtn=document.getElementById("flushBtn");
   const queueInfo=document.getElementById("queueInfo");
-
   function getQueue(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}catch(_){return[]} }
   function setQueue(a){ localStorage.setItem(LS_KEY,JSON.stringify(a)); updateQueueUI(); }
   function addPending(p){ const q=getQueue(); q.push({payload:p,savedAt:new Date().toISOString()}); setQueue(q); }
@@ -175,12 +232,11 @@
   window.addEventListener("online",()=>{ setNetBar(); flushPending(); }); window.addEventListener("offline",setNetBar);
   setNetBar(); updateQueueUI();
 
-  // ===== Código UI =====
+  // ===== Código UI + Submissão =====
   const codeArea=document.getElementById("codeArea");
   const bigCode=document.getElementById("bigCode");
   const copyBtn=document.getElementById("copyBtn");
 
-  // ===== Submissão =====
   document.getElementById("cagarroForm").addEventListener("submit",async(e)=>{
     e.preventDefault();
     if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.focus(); return; }
@@ -202,7 +258,6 @@
     };
 
     try{
-      // Sem headers -> sem preflight; Apps Script aceita o corpo como texto/JSON
       const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(payload)});
       const text=await res.text(); let data=null; try{ data=JSON.parse(text);}catch(_){}
       if(res.ok && data && data.status==="success"){
@@ -222,7 +277,6 @@
     }
   });
 
-  // ===== Enviar Pendentes =====
   async function flushPending(){
     if(!navigator.onLine) return;
     const q=getQueue(); if(q.length===0) return;
@@ -240,7 +294,6 @@
   }
   document.getElementById("flushBtn").addEventListener("click",flushPending);
 
-  // ===== Copiar código =====
   copyBtn.addEventListener("click",async(ev)=>{
     ev.preventDefault();
     const code=bigCode.textContent.trim(); if(!code) return;
