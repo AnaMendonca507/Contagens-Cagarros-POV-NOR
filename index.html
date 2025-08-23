@@ -40,7 +40,6 @@
   .code-actions{display:flex;justify-content:center;gap:10px;margin-top:8px}
   .small-note{text-align:center;font-size:12px;color:var(--muted);margin-top:6px}
 
-  /* Logo no fim (branco) */
   footer{margin:28px 0 6px;display:flex;justify-content:center}
   footer img.logo{max-width:190px;height:auto;filter: drop-shadow(0 2px 4px rgba(0,0,0,.25))}
 </style>
@@ -49,11 +48,11 @@
 
 <h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
-<p class="need">Requisito de precisão do GPS: <strong>≤ 10 m</strong></p>
+<p class="need">Requisito de precisão do GPS: <strong>≤ 5 m</strong></p>
 
 <div id="netStatus" class="statusbar hidden"></div>
 
-<form id="cagarroForm" novalidate>
+<form id="cagarroForm">
   <label for="nome">Nome / Name</label>
   <input type="text" id="nome" name="nome" placeholder="Digite o seu nome / Enter your name" required />
 
@@ -66,7 +65,6 @@
     <option value="Oleado / Oiled">Oleado / Oiled</option>
   </select>
 
-  <!-- Concelho (antes de Local) -->
   <label for="concelho">Concelho / Municipality</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
@@ -113,15 +111,15 @@
 <footer><img src="./spea-logo-white.png" alt="SPEA" class="logo" /></footer>
 
 <script>
-  // URL do Web App (Apps Script) — A TUA IMPLEMENTAÇÃO
+  // TUA implementação (Apps Script)
   const scriptURL = "https://script.google.com/macros/s/AKfycbzIP8HhmrNoVVLg3bUhkiuAOSOhHZsrVO-yI3dpQ-tRkjfx_zkyjyQ1rer-5O9121hh/exec";
 
-  // ===== GPS automático (exige ≤ 10 m; reinicia sozinho; envia precisão) =====
+  // ===== GPS automático (exige ≤ 5 m; reinicia; envia precisão) =====
   document.addEventListener("DOMContentLoaded", () => {
-    const REQUIRED_ACC = 10;     // metros
-    const WATCH_MAX    = 30000;  // 30s por sessão
-    const RETRY_GAP    = 1500;   // 1.5s entre sessões
-    const STABLE_MS    = 2500;   // manter ~2.5s antes de aceitar
+    const REQUIRED_ACC = 5;       // metros
+    const WATCH_MAX    = 120000;  // até 120s por sessão (ajuda a chegar a 5 m)
+    const RETRY_GAP    = 1500;    // 1.5s entre sessões
+    const STABLE_MS    = 3000;    // ~3s estável
 
     const latEl = document.getElementById("latitude");
     const lonEl = document.getElementById("longitude");
@@ -209,8 +207,10 @@
   const copyBtn=document.getElementById("copyBtn");
 
   document.getElementById("cagarroForm").addEventListener("submit",async(e)=>{
+    const form=e.target;
+    if(!form.checkValidity()) return;
     e.preventDefault();
-    if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.focus(); return; }
+    if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.reportValidity?.(); inpOu.focus(); return; }
 
     const btn=document.getElementById("sendBtn");
     const msg=document.getElementById("mensagem");
@@ -236,7 +236,7 @@
         msg.textContent="✅ Registo enviado! / Entry submitted!";
         bigCode.textContent=data.codigo||"";
         codeArea.classList.remove("hidden");
-        e.target.reset();
+        form.reset();
       } else {
         addPending(payload);
         msg.innerHTML="⚠️ Não foi possível gravar agora. Guardado em Pendentes.";
