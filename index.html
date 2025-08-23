@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#2f4595" />
-<title>Registo de Cagarros POVOAÇÃO NORDESTE/ Cory's Shearwater Rescue</title>
+<title>Registo de Cagarros / Cory's Shearwater Rescue</title>
 <style>
   :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
   body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
@@ -40,6 +40,7 @@
   .code-actions{display:flex;justify-content:center;gap:10px;margin-top:8px}
   .small-note{text-align:center;font-size:12px;color:var(--muted);margin-top:6px}
 
+  /* Logo */
   footer{margin:28px 0 6px;display:flex;justify-content:center}
   footer img.logo{max-width:190px;height:auto;filter: drop-shadow(0 2px 4px rgba(0,0,0,.25))}
 </style>
@@ -48,7 +49,7 @@
 
 <h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
-<p class="need">Requisito de precisão do GPS: <strong>≤ 5 m</strong></p>
+<p class="need">Alvo de precisão do GPS: <strong>≤ 5 m</strong>. <em>Se não for possível em 30 s, podes enviar mesmo assim.</em></p>
 
 <div id="netStatus" class="statusbar hidden"></div>
 
@@ -65,6 +66,7 @@
     <option value="Oleado / Oiled">Oleado / Oiled</option>
   </select>
 
+  <!-- Concelho (antes de Local) -->
   <label for="concelho">Concelho / Municipality</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
@@ -111,15 +113,16 @@
 <footer><img src="./spea-logo-white.png" alt="SPEA" class="logo" /></footer>
 
 <script>
-  // TUA implementação (Apps Script)
+  // Apps Script (tua implementação)
   const scriptURL = "https://script.google.com/macros/s/AKfycbzIP8HhmrNoVVLg3bUhkiuAOSOhHZsrVO-yI3dpQ-tRkjfx_zkyjyQ1rer-5O9121hh/exec";
 
-  // ===== GPS automático (exige ≤ 5 m; reinicia; envia precisão) =====
+  // ===== GPS automático (alvo ≤5 m; desbloqueio aos 30 s; sessão 90 s) =====
   document.addEventListener("DOMContentLoaded", () => {
     const REQUIRED_ACC = 5;       // metros
-    const WATCH_MAX    = 120000;  // até 120s por sessão (ajuda a chegar a 5 m)
-    const RETRY_GAP    = 1500;    // 1.5s entre sessões
-    const STABLE_MS    = 3000;    // ~3s estável
+    const SOFT_TIMEOUT = 30000;   // 30 s antes de permitir envio mesmo sem 5 m
+    const WATCH_MAX    = 90000;   // 90 s por sessão de watch
+    const RETRY_GAP    = 1500;    // 1.5 s entre sessões
+    const STABLE_MS    = 2500;    // ~2.5 s estável
 
     const latEl = document.getElementById("latitude");
     const lonEl = document.getElementById("longitude");
@@ -127,10 +130,10 @@
     const sendBtn = document.getElementById("sendBtn");
     const hint = document.getElementById("gpsHint");
 
-    let watchId = null, timer = null, best = null, t0 = 0;
+    let watchId = null, sessionTimer = null, softTimer = null, best = null, t0 = 0, unlocked = false;
 
-    function lockSend(txt){ sendBtn.disabled = true;  sendBtn.textContent = txt || "📍 A obter GPS…"; }
-    function unlockSend(){  sendBtn.disabled = false; sendBtn.textContent = "Enviar / Submit"; }
+    function lockSend(txt){ if (!unlocked){ sendBtn.disabled = true; sendBtn.textContent = txt || "📍 A obter GPS…"; } }
+    function unlockSend(txt){ unlocked = true; sendBtn.disabled = false; sendBtn.textContent = txt || "Enviar / Submit"; }
     function showFix(f){
       latEl.value = f.lat.toFixed(6);
       lonEl.value = f.lon.toFixed(6);
@@ -139,7 +142,9 @@
     }
     function clearWatch(){
       try{ if (watchId!==null) navigator.geolocation.clearWatch(watchId); }catch(_){}
-      watchId = null; if (timer){ clearTimeout(timer); timer=null; }
+      watchId = null;
+      if (sessionTimer){ clearTimeout(sessionTimer); sessionTimer=null; }
+      if (softTimer){ clearTimeout(softTimer); softTimer=null; }
     }
     function startWatch(){
       clearWatch(); best=null; t0=Date.now();
@@ -147,35 +152,52 @@
       if (!("geolocation" in navigator)){ hint.textContent="Dispositivo sem geolocalização."; return; }
       hint.textContent = `A procurar satélites (alvo ≤ ${REQUIRED_ACC} m)…`;
 
+      // Desbloqueio suave aos 30 s
+      softTimer = setTimeout(() => {
+        if (!unlocked){
+          if (best){
+            hint.textContent = `⚠️ Precisão insuficiente após 30 s: ±${Math.round(best.acc)} m. Podes enviar assim.`;
+            unlockSend("Enviar (precisão baixa)");
+          } else {
+            hint.textContent = "⚠️ Sem leituras após 30 s. Podes enviar assim (sem GPS).";
+            accEl.value = ""; // sem precisão
+            unlockSend("Enviar (sem GPS)");
+          }
+        }
+      }, SOFT_TIMEOUT);
+
       watchId = navigator.geolocation.watchPosition(
         pos => {
           const acc = pos.coords.accuracy || 9999;
           const fix = { lat: pos.coords.latitude, lon: pos.coords.longitude, acc };
           if (!best || acc < best.acc){ best = fix; showFix(best); }
-          if (best.acc <= REQUIRED_ACC && (Date.now()-t0) > STABLE_MS){
+          // Assim que atingir o objetivo e estiver estável, desbloqueia
+          if (!unlocked && best.acc <= REQUIRED_ACC && (Date.now()-t0) > STABLE_MS){
             hint.textContent = `GPS ok: ±${Math.round(best.acc)} m ✅`;
             unlockSend();
-          } else {
+          } else if (!unlocked){
             lockSend("📍 A melhorar precisão…");
           }
+          // Nota: mesmo após desbloquear, continuamos a medir para guardar a melhor precisão até ao envio.
         },
         err => {
-          clearWatch();
-          hint.textContent = `Sem GPS preciso (${err.message}). Nova tentativa…`;
-          setTimeout(startWatch, RETRY_GAP);
+          try{ if (watchId!==null) navigator.geolocation.clearWatch(watchId); }catch(_){}
+          watchId = null;
+          if (!unlocked) hint.textContent = `Sem GPS preciso (${err.message}). Nova tentativa…`;
+          setTimeout(() => { if (!document.hidden) startWatch(); }, RETRY_GAP);
         },
         { enableHighAccuracy: true, timeout: WATCH_MAX, maximumAge: 0 }
       );
 
-      // reiniciar sessão periodicamente (evita ficar preso)
-      timer = setTimeout(() => {
-        clearWatch();
-        if (!best) hint.textContent = "A tentar novamente obter fix…";
-        setTimeout(startWatch, RETRY_GAP);
+      // reiniciar sessão periodicamente para tentar melhorar a precisão
+      sessionTimer = setTimeout(() => {
+        try{ if (watchId!==null) navigator.geolocation.clearWatch(watchId); }catch(_){}
+        watchId = null;
+        if (!unlocked && !best) hint.textContent = "A tentar novamente obter fix…";
+        setTimeout(() => { if (!document.hidden) startWatch(); }, RETRY_GAP);
       }, WATCH_MAX);
     }
 
-    // arranque + pausa/retoma ao mudar de separador
     startWatch();
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) clearWatch(); else startWatch();
