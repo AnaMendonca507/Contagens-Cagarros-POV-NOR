@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#2f4595" />
-<title>Registo de Cagarros POVOAÇÃO NORDESTE/ Cory's Shearwater Rescue</title>
+<title>Registo de Cagarros / Cory's Shearwater Rescue</title>
 <style>
   :root { --maxw:540px; --spea-blue:#2f4595; --ok:#28a745; --cta:#28a745; --muted:#dbe1ff; }
   body{font-family:Arial,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0 auto;padding:18px;max-width:var(--maxw);background:var(--spea-blue);color:#fff}
@@ -49,7 +49,7 @@
 </head>
 <body>
 
-<h2>Registo de Cagarros POVOAÇÃO NORDESTE<br/>Cory's Shearwater Rescue</h2>
+<h2>Registo de Cagarros<br/>Cory's Shearwater Rescue</h2>
 <p class="subtitle">Formulário bilingue — Portuguese / English</p>
 
 <div id="netStatus" class="statusbar hidden"></div>
@@ -67,7 +67,7 @@
     <option value="Oleado / Oiled">Oleado / Oiled</option>
   </select>
 
-  <!-- 🔁 Concelho vem ANTES de Local -->
+  <!-- Concelho (antes de Local) -->
   <label for="concelho">Concelho / Municipality</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
@@ -117,39 +117,70 @@
   // URL do teu Web App (Apps Script)
   const scriptURL = "https://script.google.com/macros/s/AKfycbxW4SkB3TVz-ZJ2MdQFjGjEGVv_jCg0sVckSxG3Tte1oSuAQOV9sg1CoUO19xxQiYqN/exec";
 
-  // GPS
+  // ===== GPS preciso (frontend) =====
   document.addEventListener("DOMContentLoaded", () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        document.getElementById("latitude").value  = pos.coords.latitude;
-        document.getElementById("longitude").value = pos.coords.longitude;
-        enableSend();
-      }, () => { enableSend(); });
-    } else { enableSend(); }
-  });
-  function enableSend(){ const b=document.getElementById("sendBtn"); b.disabled=false; b.textContent="Enviar / Submit"; }
+    const lat = document.getElementById("latitude");
+    const lon = document.getElementById("longitude");
+    const btn = document.getElementById("sendBtn");
 
-  // Concelho → “Outra”
+    // linha de estado logo abaixo do botão
+    const status = document.createElement("div");
+    status.className = "hint";
+    btn.insertAdjacentElement("afterend", status);
+
+    function enableSend(){
+      btn.disabled = false;
+      btn.textContent = "Enviar / Submit";
+    }
+
+    function onOK(pos){
+      lat.value = pos.coords.latitude.toFixed(6);
+      lon.value = pos.coords.longitude.toFixed(6);
+      status.textContent = `GPS ok (±${Math.round(pos.coords.accuracy)} m)`;
+      enableSend();
+    }
+    function onErr(err){
+      status.textContent = `Sem GPS preciso (${err.message}). A posição pode ser aproximada.`;
+      enableSend();
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        onOK, onErr,
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      );
+    } else {
+      status.textContent = "Dispositivo sem geolocalização.";
+      enableSend();
+    }
+  });
+
+  // ===== Concelho → “Outra” =====
   const selCon=document.getElementById("concelho");
   const wrapOu=document.getElementById("concelhoOutroWrap");
   const inpOu=document.getElementById("concelhoOutro");
   selCon.addEventListener("change",()=>{ const outra=selCon.value==="Outra"; wrapOu.classList.toggle("hidden",!outra); inpOu.required=outra; if(!outra) inpOu.value=""; });
 
-  // Offline queue
-  const LS_KEY="cagarros_pendentes_v1"; const netBar=document.getElementById("netStatus"); const flushBtn=document.getElementById("flushBtn"); const queueInfo=document.getElementById("queueInfo");
+  // ===== Offline queue =====
+  const LS_KEY="cagarros_pendentes_v1";
+  const netBar=document.getElementById("netStatus");
+  const flushBtn=document.getElementById("flushBtn");
+  const queueInfo=document.getElementById("queueInfo");
+
   function getQueue(){ try{return JSON.parse(localStorage.getItem(LS_KEY)||"[]")}catch(_){return[]} }
   function setQueue(a){ localStorage.setItem(LS_KEY,JSON.stringify(a)); updateQueueUI(); }
   function addPending(p){ const q=getQueue(); q.push({payload:p,savedAt:new Date().toISOString()}); setQueue(q); }
   function updateQueueUI(){ const n=getQueue().length; queueInfo.textContent=n>0?`🗂️ Pendentes: ${n}`:""; flushBtn.classList.toggle("hidden",n===0); }
   function setNetBar(){ netBar.classList.remove("hidden"); if(navigator.onLine){ netBar.className="statusbar online"; netBar.textContent="Ligação ativa / Online"; } else { netBar.className="statusbar offline"; netBar.textContent="Sem rede — pendentes / Offline — will be queued"; } }
-  window.addEventListener("online",()=>{ setNetBar(); flushPending(); }); window.addEventListener("offline",setNetBar); setNetBar(); updateQueueUI();
+  window.addEventListener("online",()=>{ setNetBar(); flushPending(); }); window.addEventListener("offline",setNetBar);
+  setNetBar(); updateQueueUI();
 
-  // Código UI
+  // ===== Código UI =====
   const codeArea=document.getElementById("codeArea");
   const bigCode=document.getElementById("bigCode");
   const copyBtn=document.getElementById("copyBtn");
 
-  // Submissão
+  // ===== Submissão =====
   document.getElementById("cagarroForm").addEventListener("submit",async(e)=>{
     e.preventDefault();
     if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.focus(); return; }
@@ -191,7 +222,7 @@
     }
   });
 
-  // Enviar Pendentes
+  // ===== Enviar Pendentes =====
   async function flushPending(){
     if(!navigator.onLine) return;
     const q=getQueue(); if(q.length===0) return;
@@ -209,7 +240,7 @@
   }
   document.getElementById("flushBtn").addEventListener("click",flushPending);
 
-  // Copiar código
+  // ===== Copiar código =====
   copyBtn.addEventListener("click",async(ev)=>{
     ev.preventDefault();
     const code=bigCode.textContent.trim(); if(!code) return;
@@ -223,4 +254,3 @@
 </script>
 </body>
 </html>
-
