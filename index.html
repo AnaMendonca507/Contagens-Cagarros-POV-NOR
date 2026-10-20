@@ -55,7 +55,8 @@
 
 <form id="cagarroForm">
   <label for="nome">Nome / Name</label>
-  <input type="text" id="nome" name="nome" placeholder="Digite o seu nome / Enter your name" required />
+  <input type="text" id="nome" name="nome" autocomplete="name" aria-describedby="nomeHint" placeholder="Digite o seu nome / Enter your name" required />
+  <div id="nomeHint" class="hint">O nome fica guardado neste navegador. Pode alterá-lo a qualquer momento. / Your name is saved in this browser. You can change it anytime.</div>
 
   <label for="estado">Estado / Status</label>
   <select id="estado" name="estado" required>
@@ -67,7 +68,7 @@
   </select>
 
   <!-- Concelho (antes de Local) -->
-  <label for="concelho">Concelho / Municipality</label>
+  <label for="concelho">Concelho / Municipality *</label>
   <select id="concelho" name="concelho" required>
     <option value="">— selecione / select —</option>
     <option value="Nordeste">Nordeste</option>
@@ -80,10 +81,9 @@
     <input id="concelhoOutro" name="concelhoOutro" placeholder="Ex.: Água Retorta" />
   </div>
 
-  <label for="local">Local / Location</label>
+  <label for="local">Local / Location *</label>
   <select id="local" name="local" required>
     <option value="">-- Selecionar / Select --</option>
-    <option value="Sem localização / No location">Sem localização / No location</option>
     <option value="Hotel de Cagarro / Shearwater Hotel">Hotel de Cagarro / Shearwater Hotel</option>
     <option value="Fora da marina/Porto / Outside marina/Port">Fora da marina/Porto / Outside marina/Port</option>
   </select>
@@ -204,6 +204,19 @@
     });
   });
 
+  // ===== Nome do voluntário neste navegador =====
+  const nomeEl=document.getElementById("nome");
+  const NOME_KEY="cagarros_voluntario_v1";
+  function rememberName(){
+    try{
+      const nome=nomeEl.value.trim();
+      if(nome) localStorage.setItem(NOME_KEY,nome);
+      else localStorage.removeItem(NOME_KEY);
+    }catch(_){} // O formulário continua disponível se o armazenamento estiver bloqueado.
+  }
+  try{ nomeEl.value=localStorage.getItem(NOME_KEY)||""; }catch(_){}
+  nomeEl.addEventListener("input",rememberName);
+
   // ===== Concelho → “Outra” =====
   const selCon=document.getElementById("concelho");
   const wrapOu=document.getElementById("concelhoOutroWrap");
@@ -230,9 +243,11 @@
 
   document.getElementById("cagarroForm").addEventListener("submit",async(e)=>{
     const form=e.target;
-    if(!form.checkValidity()) return;
     e.preventDefault();
-    if (selCon.value==="Outra" && !inpOu.value.trim()){ inpOu.reportValidity?.(); inpOu.focus(); return; }
+    nomeEl.value=nomeEl.value.trim();
+    inpOu.value=inpOu.value.trim();
+    if(!form.reportValidity()) return;
+    rememberName();
 
     const btn=document.getElementById("sendBtn");
     const msg=document.getElementById("mensagem");
@@ -258,7 +273,10 @@
         msg.textContent="✅ Registo enviado! / Entry submitted!";
         bigCode.textContent=data.codigo||"";
         codeArea.classList.remove("hidden");
+        const volunteerName=nomeEl.value;
         form.reset();
+        nomeEl.value=volunteerName;
+        selCon.dispatchEvent(new Event("change"));
       } else {
         addPending(payload);
         msg.innerHTML="⚠️ Não foi possível gravar agora. Guardado em Pendentes.";
