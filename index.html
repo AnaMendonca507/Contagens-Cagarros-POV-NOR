@@ -27,6 +27,9 @@
   .online{background:#e6f4ea;color:#1e7e34;border:1px solid #c7efd3}
   .offline{background:#fdecea;color:#a4252c;border:1px solid #f5c6cb}
   .queue{font-size:13px;text-align:center;color:#eee;margin-top:8px}
+  .rescue-counter{margin:14px 0;padding:16px;border:1px solid #c7efd3;border-radius:12px;background:#e6f4ea;color:#185d2b;text-align:center}
+  .rescue-counter strong{display:block;font-size:21px;line-height:1.4}
+  .rescue-counter small{display:block;margin-top:6px;line-height:1.4}
 
   /* Código gigante */
   .code-wrap{display:flex;justify-content:center;margin-top:12px}
@@ -52,6 +55,10 @@
 <p class="need">Alvo de precisão do GPS: <strong>≤ 5 m</strong>. <em>Se não for possível em 30 s, podes enviar mesmo assim.</em></p>
 
 <div id="netStatus" class="statusbar hidden"></div>
+<div class="rescue-counter" role="status" aria-live="polite" aria-atomic="true">
+  <strong id="rescueCount"></strong>
+  <small id="rescueCountNote">Resgates confirmados por nome neste navegador, a partir de agora. / Confirmed rescues per name in this browser, from now on.</small>
+</div>
 
 <form id="cagarroForm">
   <label for="nome">Nome / Name</label>
@@ -217,6 +224,35 @@
   try{ nomeEl.value=localStorage.getItem(NOME_KEY)||""; }catch(_){}
   nomeEl.addEventListener("input",rememberName);
 
+  // ===== Contador pessoal de resgates confirmados =====
+  const RESCUE_KEY="cagarros_resgates_v1";
+  let rescueCounts=new Map();
+  try{
+    const saved=JSON.parse(localStorage.getItem(RESCUE_KEY)||"[]");
+    if(Array.isArray(saved)) rescueCounts=new Map(saved.filter(row=>
+      Array.isArray(row) && typeof row[0]==="string" && Number.isSafeInteger(row[1]) && row[1]>=0));
+  }catch(_){}
+  function volunteerKey(name){ return name.trim().normalize("NFC").toLocaleLowerCase("pt-PT"); }
+  function updateRescueCounter(){
+    const name=volunteerKey(nomeEl.value);
+    const count=rescueCounts.get(name)||0;
+    document.getElementById("rescueCount").textContent=!name
+      ? "🐦 Indique o seu nome para ver os seus resgates. / Enter your name to see your rescues."
+      : count===0 ? "🐦 O seu próximo resgate faz a diferença! / Your next rescue makes a difference!"
+      : `🐦 Já registou o resgate de ${count} ${count===1 ? "cagarro" : "cagarros"}. Obrigado pela sua ajuda! / ${count} ${count===1 ? "rescue" : "rescues"} recorded. Thank you!`;
+  }
+  function countConfirmedRescue(payload){
+    if(!["Vivo / Alive","Ferido / Injured","Oleado / Oiled"].includes(payload.estado)) return;
+    const name=volunteerKey(payload.nome);
+    if(!name) return;
+    rescueCounts.set(name,(rescueCounts.get(name)||0)+1);
+    try{ localStorage.setItem(RESCUE_KEY,JSON.stringify([...rescueCounts])); }
+    catch(_){ document.getElementById("rescueCountNote").textContent="Contador apenas nesta sessão: não foi possível guardá-lo. / Counter available only for this session: could not save it."; }
+    updateRescueCounter();
+  }
+  nomeEl.addEventListener("input",updateRescueCounter);
+  updateRescueCounter();
+
   // ===== Concelho → “Outra” =====
   const selCon=document.getElementById("concelho");
   const wrapOu=document.getElementById("concelhoOutroWrap");
@@ -270,6 +306,7 @@
       const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(payload)});
       const text=await res.text(); let data=null; try{ data=JSON.parse(text);}catch(_){}
       if(res.ok && data && data.status==="success"){
+        countConfirmedRescue(payload);
         msg.textContent="✅ Registo enviado! / Entry submitted!";
         bigCode.textContent=data.codigo||"";
         codeArea.classList.remove("hidden");
@@ -289,16 +326,30 @@
     }
   });
 
+  let flushingPending=false;
   async function flushPending(){
-    if(!navigator.onLine) return;
+    if(!navigator.onLine || flushingPending) return;
     const q=getQueue(); if(q.length===0) return;
+    flushingPending=true;
     flushBtn.disabled=true; flushBtn.textContent="A enviar pendentes... / Sending...";
-    let ok=0,fail=0; const newQ=[];
+    let ok=0,fail=0; const sentItems=[];
     for(const item of q){
-      try{ const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(item.payload)}); if(res.ok) ok++; else {fail++; newQ.push(item);} }
-      catch(_){ fail++; newQ.push(item); }
+      try{
+        const res=await fetch(scriptURL,{method:"POST",body:JSON.stringify(item.payload)});
+        const data=await res.json();
+        if(res.ok && data && data.status==="success"){
+          ok++; sentItems.push(JSON.stringify(item)); countConfirmedRescue(item.payload);
+        }else fail++;
+      }catch(_){ fail++; }
     }
+    // Preservar também registos adicionados enquanto os pendentes eram enviados.
+    const newQ=getQueue().filter(item=>{
+      const index=sentItems.indexOf(JSON.stringify(item));
+      if(index<0) return true;
+      sentItems.splice(index,1); return false;
+    });
     setQueue(newQ);
+    flushingPending=false;
     flushBtn.disabled=false; flushBtn.textContent="📤 Enviar Pendentes / Send Pending";
     const msg=document.getElementById("mensagem");
     if(ok>0) msg.textContent=`📤 Enviados: ${ok} | Por enviar: ${newQ.length}`;
