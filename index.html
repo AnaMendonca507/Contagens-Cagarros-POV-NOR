@@ -240,7 +240,6 @@
       : `🐦 Já registou o resgate de ${count} ${count===1 ? "cagarro" : "cagarros"}. Obrigado pela sua ajuda!\n${count} ${count===1 ? "rescue" : "rescues"} recorded. Thank you!`;
   }
   function countConfirmedRescue(payload){
-    if(!["Vivo / Alive","Ferido / Injured","Oleado / Oiled"].includes(payload.estado)) return;
     const name=volunteerKey(payload.nome);
     if(!name) return;
     rescueCounts.set(name,(rescueCounts.get(name)||0)+1);
