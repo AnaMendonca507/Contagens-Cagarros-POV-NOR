@@ -29,7 +29,6 @@
   .queue{font-size:13px;text-align:center;color:#eee;margin-top:8px}
   .rescue-counter{margin:14px 0;padding:16px;border:1px solid #c7efd3;border-radius:12px;background:#e6f4ea;color:#185d2b;text-align:center}
   .rescue-counter strong{display:block;font-size:21px;line-height:1.4;white-space:pre-line;text-align:center}
-  .rescue-counter small{display:block;margin-top:6px;line-height:1.4;white-space:pre-line;text-align:center}
 
   /* Código gigante */
   .code-wrap{display:flex;justify-content:center;margin-top:12px}
@@ -57,8 +56,6 @@
 <div id="netStatus" class="statusbar hidden"></div>
 <div class="rescue-counter" role="status" aria-live="polite" aria-atomic="true">
   <strong id="rescueCount"></strong>
-  <small id="rescueCountNote">Resgates confirmados por nome neste navegador, a partir de agora.
-Confirmed rescues per name in this browser, from now on.</small>
 </div>
 
 <form id="cagarroForm">
@@ -248,7 +245,7 @@ Confirmed rescues per name in this browser, from now on.</small>
     if(!name) return;
     rescueCounts.set(name,(rescueCounts.get(name)||0)+1);
     try{ localStorage.setItem(RESCUE_KEY,JSON.stringify([...rescueCounts])); }
-    catch(_){ document.getElementById("rescueCountNote").textContent="Contador apenas nesta sessão: não foi possível guardá-lo.\nCounter available only for this session: could not save it."; }
+    catch(_){} // Se não for possível guardar, manter a contagem nesta sessão.
     updateRescueCounter();
   }
   nomeEl.addEventListener("input",updateRescueCounter);
